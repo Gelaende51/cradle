@@ -6,6 +6,8 @@
 . "$CRADLE_ROOT/lib/token.sh"
 # shellcheck source=lib/config.sh
 . "$CRADLE_ROOT/lib/config.sh"
+# shellcheck source=lib/proxy.sh
+. "$CRADLE_ROOT/lib/proxy.sh"
 
 # The file events backend avoids a lost start event (see lib/podman-events.conf).
 _dc() {
@@ -27,6 +29,7 @@ _session_token() {
 cmd_up() {
   need podman; need devcontainer
   render_devcontainer "$PWD"
+  proxy_up "$PWD"
   config_is_current || config_sync >/dev/null
   _session_token
   local id cur flags=()
@@ -45,10 +48,14 @@ cmd_down() {
   need podman
   local ids
   ids=$(podman ps -q --filter "label=devcontainer.local_folder=$PWD")
-  if [[ -z $ids ]]; then msg "no running dev container for %s" "$PWD"; return 0; fi
-  # shellcheck disable=SC2086  # one id per word
-  podman stop $ids >/dev/null
-  msg "stopped the dev container for %s" "$PWD"
+  if [[ -z $ids ]]; then
+    msg "no running dev container for %s" "$PWD"
+  else
+    # shellcheck disable=SC2086  # one id per word
+    podman stop $ids >/dev/null
+    msg "stopped the dev container for %s" "$PWD"
+  fi
+  proxy_down "$PWD"
 }
 
 # _exec CMD...: run CMD as dev in the workspace. podman exec, not devcontainer exec:

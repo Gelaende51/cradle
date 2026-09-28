@@ -75,3 +75,9 @@ setup() {
   run cradle doctor
   [[ "$output" == *"warn"*"token"*"renew it"* ]]
 }
+
+@test "a missing proxy image warns" {
+  stub_script podman 'case "$1 $2" in "info "*) echo true ;; "image exists") [[ $3 == cradle-proxy:* ]] && exit 1 ;; esac; exit 0'
+  run cradle doctor
+  [[ "$output" == *"warn"*"cradle-proxy"*"cradle image build"* ]]
+}

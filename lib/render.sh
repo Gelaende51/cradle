@@ -75,7 +75,7 @@ render_devcontainer() {
   vol="cradle-$(project_key "$dir")-data"
   # shellcheck disable=SC2016  # ${localWorkspaceFolder} and ${localEnv:…} are devcontainer variables
   obj=$(jq -n --slurpfile cfg "$cfg" --argjson fmap "$FEATURES_JSON" --argjson masks "$extra" \
-      --arg slug "$slug" --arg ws "$ws" --arg vol "$vol" --arg image "localhost/cradle-base:$(cradle_version)" '
+      --arg slug "$slug" --arg key "$(project_key "$dir")" --arg ws "$ws" --arg vol "$vol" --arg image "localhost/cradle-base:$(cradle_version)" '
       $cfg[0] as $c | {
         name: ("cradle-" + $slug),
         image: $image,
@@ -86,7 +86,8 @@ render_devcontainer() {
         workspaceFolder: $ws,
         workspaceMount: ("source=${localWorkspaceFolder},target=" + $ws + ",type=bind"),
         runArgs: (["--userns=keep-id:uid=1000,gid=1000", "--security-opt=no-new-privileges",
-                   "--cap-drop=ALL", ("--memory=" + ($c.memory // "3g"))] + $masks),
+                   "--cap-drop=ALL", ("--memory=" + ($c.memory // "3g")),
+                   ("--network=cradle-" + $key)] + $masks),
         mounts: ["source=cradle-claude,target=/home/dev/.claude,type=volume",
                  "source=cradle-punt,target=/home/dev/.punt-labs,type=volume",
                  ("source=" + $vol + ",target=/home/dev/.local/share/cradle,type=volume")],
@@ -95,6 +96,9 @@ render_devcontainer() {
           CRADLE_WORKSPACE: $ws,
           QUARRY_ROOT: "/home/dev/.local/share/cradle/quarry",
           HF_HUB_OFFLINE: "1",
+          HTTP_PROXY: "http://proxy:3128", HTTPS_PROXY: "http://proxy:3128",
+          http_proxy: "http://proxy:3128", https_proxy: "http://proxy:3128",
+          NO_PROXY: "localhost,127.0.0.1,::1", no_proxy: "localhost,127.0.0.1,::1",
           GIT_CONFIG_COUNT: "1",
           GIT_CONFIG_KEY_0: "core.hooksPath",
           GIT_CONFIG_VALUE_0: "/home/dev/.local/share/cradle/hooks"

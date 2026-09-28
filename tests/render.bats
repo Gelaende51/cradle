@@ -76,3 +76,12 @@ dc_json() { tail -n +2 "$P/.devcontainer/devcontainer.json"; }
   jq '.memory = "4g"' "$P/.devcontainer/cradle.json" > "$P/c" && mv "$P/c" "$P/.devcontainer/cradle.json"
   render_devcontainer "$P"; [ "$(render_id "$P")" != "$a" ]
 }
+
+@test "the container joins only the project's internal network and uses the proxy" {
+  render_devcontainer "$P"
+  dc_json | jq -e --arg n "--network=cradle-$(project_key "$P")" '.runArgs | index($n)'
+  [ "$(dc_json | jq '[.runArgs[] | select(startswith("--network"))] | length')" -eq 1 ]
+  [ "$(dc_json | jq -r .containerEnv.HTTPS_PROXY)" = http://proxy:3128 ]
+  [ "$(dc_json | jq -r .containerEnv.https_proxy)" = http://proxy:3128 ]
+  [ "$(dc_json | jq -r .containerEnv.NO_PROXY)" = "localhost,127.0.0.1,::1" ]
+}

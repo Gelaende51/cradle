@@ -52,9 +52,12 @@ check_devcontainer_version() {
 
 check_image() {
   have podman || return 0
-  local tag; tag="cradle-base:$(cradle_version)"
-  if podman image exists "$tag"; then _report ok image "%s" "$tag"
-  else _report warn image "%s not built; run: cradle image build" "$tag"; fi
+  local n tag
+  for n in cradle-base cradle-proxy; do
+    tag="$n:$(cradle_version)"
+    if podman image exists "$tag"; then _report ok image "%s" "$tag"
+    else _report warn image "%s not built; run: cradle image build" "$tag"; fi
+  done
 }
 
 check_config() {

@@ -101,3 +101,17 @@ setup() {
   grep -q "EVENTS_CONF=$CRADLE_ROOT/lib/podman-events.conf" "$STUB_LOG"
   grep -q 'events_logger = "file"' "$CRADLE_ROOT/lib/podman-events.conf"
 }
+
+@test "up starts the proxy before the dev container" {
+  run cradle up
+  [ "$status" -eq 0 ]
+  p=$(grep -n "podman run -d --name cradle-proxy-" "$STUB_LOG" | cut -d: -f1)
+  d=$(grep -n "^devcontainer up" "$STUB_LOG" | cut -d: -f1)
+  [ -n "$p" ] && [ "$p" -lt "$d" ]
+}
+
+@test "down also removes the proxy" {
+  stub_script podman '[[ $1 == ps ]] && echo abc123; exit 0'
+  run cradle down
+  grep -q "podman rm -f cradle-proxy-" "$STUB_LOG"
+}
