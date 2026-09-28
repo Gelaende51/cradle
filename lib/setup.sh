@@ -20,6 +20,7 @@ cmd_setup() {
   fi
   local missing_pkgs=() p
   for p in podman bats shellcheck act; do have "$p" || missing_pkgs+=("$p"); done
+  python3 -c 'import yaml' >/dev/null 2>&1 || missing_pkgs+=(python-yaml)
   ((${#missing_pkgs[@]})) && sudo_needed+=("sudo pacman -S --needed ${missing_pkgs[*]}")
 
   if ! have devcontainer; then

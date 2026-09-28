@@ -60,3 +60,58 @@ request_check() {
     || { echo "job $job is not listed in cradle.json testJobs"; return 1; }
   printf '%s %s\n' "$ref" "$job"
 }
+
+_yaml_json() { python3 -c 'import json, sys, yaml; json.dump(yaml.safe_load(sys.stdin), sys.stdout)'; }
+
+github_tree() { _git_host -C "$1" rev-parse -q --verify "$2:.github" 2>/dev/null; }
+approved_add() { local d; d=$(testd_dir "$1"); grep -qs "^$2 " "$d/approved" || printf '%s %s\n' "$2" "$3" >> "$d/approved"; }
+is_approved() { grep -qs "^$2 " "$(testd_dir "$1")/approved"; }
+
+# job_check DIR REF JOB: prints the workflow file, or a reason and returns 1.
+job_check() {
+  local dir=$1 ref=$2 job=$3 key wf tree json bad
+  key=$(project_key "$dir")
+  wf=$(jq -r --arg j "$job" '[.testJobs[] | select(.job == $j)][0].workflow // empty' "$dir/.devcontainer/cradle.json")
+  [[ $wf =~ ^[A-Za-z0-9._-]+\.ya?ml$ ]] || { echo "testJobs entry for $job needs a workflow file name like ci.yml"; return 1; }
+  tree=$(github_tree "$dir" "$ref") || { echo "commit $ref has no .github directory"; return 1; }
+  is_approved "$key" "$tree" || { echo ".github at ${ref:0:12} is not approved; run on the host: cradle approve-workflows ${ref:0:12}"; return 1; }
+  json=$(_git_host -C "$dir" show "$ref:.github/workflows/$wf" 2>/dev/null | _yaml_json 2>/dev/null) \
+    || { echo "cannot read .github/workflows/$wf at ${ref:0:12}"; return 1; }
+  bad=$(jq -r --arg j "$job" '
+    .jobs[$j] as $d
+    | if $d == null then "job \($j) is not in the workflow"
+      elif ($d.container | type) == "object" and (($d.container.options // null) != null or ($d.container.volumes // null) != null)
+        then "container.options and container.volumes are not allowed"
+      elif [($d.services // {})[] | select(type == "object" and ((.volumes // null) != null or (.options // null) != null))] | length > 0
+        then "services with volumes or options are not allowed"
+      elif [$d | del(.steps[]?.run) | .. | strings | select(test("--privileged|--volume|(^|\\s)-v\\s|docker\\.sock|podman\\.sock"))] | length > 0
+        then "--privileged, volumes and container sockets are not allowed"
+      elif [($d.steps // [])[] | (.uses? // "") | select(startswith("./") and (startswith("./.github/") | not))] | length > 0
+        then "local actions outside .github are not allowed"
+      else empty end' <<< "$json")
+  [[ -z $bad ]] || { echo "$bad"; return 1; }
+  printf '%s\n' "$wf"
+}
+
+cmd_approve_workflows() {
+  local yes=0 ref key tree prev a base
+  [[ ${1:-} == --yes ]] && { yes=1; shift; }
+  ref=$(_git_host rev-parse --verify "${1:-HEAD}^{commit}") || die "no commit %s" "${1:-HEAD}"
+  key=$(project_key "$PWD"); testd_prepare "$PWD"
+  # the remote default branch counts as reviewed
+  if _git_host remote get-url origin >/dev/null 2>&1 && _git_host fetch -q origin 2>/dev/null \
+     && base=$(_git_host rev-parse -q --verify refs/remotes/origin/HEAD) && tree=$(github_tree "$PWD" "$base"); then
+    approved_add "$key" "$tree" "$base"
+  fi
+  tree=$(github_tree "$PWD" "$ref") || die "commit %s has no .github directory" "${ref:0:12}"
+  is_approved "$key" "$tree" && { msg ".github at %s is already approved" "${ref:0:12}"; return 0; }
+  prev=$(sed -n '$s/.* //p' "$(testd_dir "$key")/approved" 2>/dev/null) || prev=""
+  [[ -n $prev ]] || prev=$(_git_host hash-object -t tree /dev/null)
+  _git_host --no-pager diff "$prev" "$ref" -- .github
+  if (( ! yes )); then
+    read -rp "$(_t "approve .github at this commit for tier-2 runs? [y/N] ")" a || a=""
+    [[ $a == [yY] ]] || die "not approved"
+  fi
+  approved_add "$key" "$tree" "$ref"
+  msg "approved .github at %s" "${ref:0:12}"
+}

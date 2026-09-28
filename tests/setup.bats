@@ -33,3 +33,9 @@ setup() {
   run cradle setup --yes
   grep -q "systemctl --user enable --now podman.socket" "$STUB_LOG"
 }
+
+@test "a missing PyYAML is listed for pacman" {
+  stub python3 1
+  run cradle setup --yes
+  [[ "$output" == *"sudo pacman -S --needed"*"python-yaml"* ]]
+}

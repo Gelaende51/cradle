@@ -88,3 +88,10 @@ setup() {
   run cradle doctor
   [[ "$output" == *"warn"*"proxy"*"cradle up"* ]]
 }
+
+@test "missing PyYAML fails with the pacman command" {
+  stub python3 1
+  run cradle doctor
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"fail"*"python-yaml"*"pacman"* ]]
+}

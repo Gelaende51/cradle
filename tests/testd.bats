@@ -69,3 +69,72 @@ req() { printf '%s' "$2" > "$D/req/new/$1"; }
   [ "$(jq -r .status "$D/results/r1/status.json")" = passed ]
   [ "$(jq -r .status "$D/results/$id/status.json")" = rejected ]
 }
+
+wf() {  # wf CONTENT [PATH]: commit a workflow (default .github/workflows/ci.yml), print the sha
+  local path=${2:-.github/workflows/ci.yml}
+  mkdir -p "$P/$(dirname "$path")"; printf '%s\n' "$1" > "$P/$path"
+  git -C "$P" add -A && git -C "$P" -c user.name=t -c user.email=t@x commit -q -m wf && git -C "$P" rev-parse HEAD
+}
+SAFE='on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo --privileged is fine inside a run step'
+
+@test "an unapproved .github tree is refused, an approved one passes" {
+  s=$(wf "$SAFE")
+  run job_check "$P" "$s" test
+  [ "$status" -eq 1 ]; [[ "$output" == *"approve-workflows"* ]]
+  approved_add "$K" "$(github_tree "$P" "$s")" "$s"
+  [ "$(job_check "$P" "$s" test)" = ci.yml ]
+}
+
+@test "changing a local action needs a new approval" {
+  s=$(wf "$SAFE"); approved_add "$K" "$(github_tree "$P" "$s")" "$s"
+  s2=$(wf 'runs: {using: composite, steps: []}' .github/actions/x/action.yml)
+  run job_check "$P" "$s2" test
+  [ "$status" -eq 1 ]
+}
+
+@test "unsafe job definitions are refused even when approved" {
+  for job in \
+    'container: {image: alpine, options: "--privileged"}' \
+    'container: {image: alpine, volumes: ["/:/host"]}' \
+    'services: {db: {image: postgres, volumes: ["/tmp:/x"]}}' \
+    'services: {db: {image: postgres, options: "-v /:/host"}}' \
+    'env: {X: "--privileged"}'; do
+    s=$(wf "on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    $job
+    steps:
+      - run: true")
+    approved_add "$K" "$(github_tree "$P" "$s")" "$s"
+    run job_check "$P" "$s" test
+    [ "$status" -eq 1 ]
+  done
+}
+
+@test "a local action outside .github is refused" {
+  s=$(wf 'on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./tools/evil')
+  approved_add "$K" "$(github_tree "$P" "$s")" "$s"
+  run job_check "$P" "$s" test
+  [ "$status" -eq 1 ]; [[ "$output" == *"outside .github"* ]]
+}
+
+@test "approve-workflows shows the diff and records the tree on confirmation" {
+  s=$(wf "$SAFE"); cd "$P"
+  run bash -c 'echo n | "$CRADLE_ROOT/bin/cradle" approve-workflows'
+  [ "$status" -eq 1 ]; [[ "$output" == *"actions/checkout"* ]]
+  run "$CRADLE_ROOT/bin/cradle" approve-workflows --yes
+  [ "$status" -eq 0 ]
+  grep -q "^$(github_tree "$P" "$s") $s$" "$D/approved"
+}

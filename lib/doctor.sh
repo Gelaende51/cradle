@@ -109,6 +109,12 @@ check_ram() {
   else _report warn ram "only %s MB available; a dev container is limited to 3072" "$mb"; fi
 }
 
+# act workflows are read as YAML on the host (tier-2 job checks).
+check_pyyaml() {
+  if python3 -c 'import yaml' >/dev/null 2>&1; then _report ok python-yaml "installed"
+  else _report fail python-yaml "not installed; run: sudo pacman -S --needed python-yaml"; fi
+}
+
 cmd_doctor() {
   check_subids
   check_cmd fail podman
@@ -119,6 +125,7 @@ cmd_doctor() {
   check_cmd fail gh
   check_cmd fail secret-tool
   check_cmd fail jq
+  check_pyyaml
   check_cmd warn act
   check_image
   check_config
