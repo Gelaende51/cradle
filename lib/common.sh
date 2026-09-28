@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Shared helpers for every cradle subcommand.
 set -euo pipefail
+# gettext: the kit ships its catalogs in locale/<lang>/LC_MESSAGES/cradle.mo
+export TEXTDOMAIN=cradle TEXTDOMAINDIR="$CRADLE_ROOT/locale"
 
 CRADLE_ROOT=${CRADLE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}
 export CRADLE_ROOT

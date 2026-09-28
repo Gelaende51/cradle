@@ -4,6 +4,8 @@ bats_require_minimum_version 1.5.0
 # plus stubs that log their calls to $STUB_LOG.
 CRADLE_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 export CRADLE_ROOT
+# tests match English messages; the i18n test sets its own language
+export LANGUAGE=en
 BASE_TOOLS=(bash env cat grep sed awk jq mkdir rm cp mv ls dirname basename
   readlink realpath tr cut sort head tail wc mktemp date find cmp touch chmod
   id gettext git sha256sum xargs tee sleep ls ln stat python3 flock timeout od)

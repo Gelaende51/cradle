@@ -221,3 +221,10 @@ jobs:
   run ! grep -q "^$(git -C "$P" rev-parse "$e:.github") " "$D/approved"
   grep -q "^$(git -C "$R" rev-parse "HEAD:.github") " "$D/approved"
 }
+
+@test "approve-workflows takes the German yes" {
+  s=$(wf "$SAFE"); cd "$P"
+  run bash -c 'echo j | "$CRADLE_ROOT/bin/cradle" approve-workflows'
+  [ "$status" -eq 0 ]
+  grep -q "^$(github_tree "$P" "$s") $s$" "$D/approved"
+}

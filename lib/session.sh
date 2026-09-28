@@ -79,7 +79,7 @@ cmd_push() {
   [[ -n $up ]] && _git_host --no-pager diff --stat "$up..HEAD" -- .github/workflows
   if (( ! yes )); then
     read -rp "$(_t "push with your host credentials? [y/N] ")" a || a=""
-    [[ $a == [yY] ]] || die "push cancelled"
+    [[ $a == [yYjJ] ]] || die "push cancelled"
   fi
   _git_host push "$@"
 }

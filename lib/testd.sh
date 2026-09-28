@@ -181,7 +181,7 @@ cmd_approve_workflows() {
   _git_host -C "$m" --no-pager diff "$prev" "$ref" -- .github
   if (( ! yes )); then
     read -rp "$(_t "approve .github at this commit for tier-2 runs? [y/N] ")" a || a=""
-    [[ $a == [yY] ]] || die "not approved"
+    [[ $a == [yYjJ] ]] || die "not approved"
   fi
   approved_add "$key" "$tree" "$ref"
   msg "approved .github at %s" "${ref:0:12}"

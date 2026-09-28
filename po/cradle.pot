@@ -1,0 +1,323 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: cradle\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: bin/cradle
+msgid "usage: cradle <command> [args]"
+msgstr ""
+
+#: bin/cradle
+msgid "commands: version help doctor setup image config init token up down claude shell push net test approve-workflows"
+msgstr ""
+
+#: bin/cradle
+msgid "  test JOB [REF]   run a tier-2 job on the host"
+msgstr ""
+
+#: bin/cradle-testd
+msgid "usage: cradle-testd PROJECT-KEY"
+msgstr ""
+
+#: bin/cradle-testd
+msgid "unknown project key %s"
+msgstr ""
+
+#: lib/common.sh
+msgid "missing command: %s"
+msgstr ""
+
+#: lib/config.sh
+msgid "config sync failed"
+msgstr ""
+
+#: lib/config.sh
+msgid "synced %s files into volume cradle-claude"
+msgstr ""
+
+#: lib/config.sh
+msgid "usage: cradle config sync"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "subordinate id ranges configured"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "no subuid/subgid range for %s; run: sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 %s && podman system migrate"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "installed"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "not installed; run: cradle setup"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "podman runs rootless"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "podman is not running rootless"
+msgstr ""
+
+#: lib/doctor.sh lib/setup.sh
+msgid "%s"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "found %s, cradle is tested with %s"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "%s not built; run: cradle image build"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "config volume matches the kit"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "config volume is missing or stale; run: cradle config sync"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "%s is running"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "%s is not running; run: cradle up"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "tier-2 runner is waiting for requests"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "tier-2 runner not active; run: cradle init --force"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "no GitHub origin here; no token needed"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "no token for %s; run: cradle token set"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "could not read the expiry of the token for %s"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "token for %s has no expiry"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "token for %s is valid for %s days"
+msgstr ""
+
+#: lib/doctor.sh lib/token.sh
+msgid "token for %s expires in %s days; renew it"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "memory limits are enforced"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "memory controller not delegated; container memory limits are ignored"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "%s GB free"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "only %s GB free in $HOME; images and test runs want 15"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "%s MB available"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "only %s MB available; a dev container is limited to 3072"
+msgstr ""
+
+#: lib/doctor.sh
+msgid "not installed; run: sudo pacman -S --needed python-yaml"
+msgstr ""
+
+#: lib/image.sh
+msgid "image build failed; %s left unchanged"
+msgstr ""
+
+#: lib/image.sh
+msgid "built %s"
+msgstr ""
+
+#: lib/image.sh
+msgid "usage: cradle image build"
+msgstr ""
+
+#: lib/init.sh
+msgid "not a git repository: %s"
+msgstr ""
+
+#: lib/init.sh
+msgid "detached %s; its volumes and results are kept"
+msgstr ""
+
+#: lib/init.sh
+msgid "%s exists; use --force to regenerate it"
+msgstr ""
+
+#: lib/init.sh
+msgid "attached %s (languages: %s); next: cradle claude"
+msgstr ""
+
+#: lib/proxy.sh
+msgid "allowedDomains in cradle.json must be a list of domains"
+msgstr ""
+
+#: lib/proxy.sh
+msgid "allowedDomains: %s is not a domain (write example.com, or .example.com for its subdomains too)"
+msgstr ""
+
+#: lib/proxy.sh
+msgid "allowedDomains: %s names a local host; the proxy only reaches the internet"
+msgstr ""
+
+#: lib/proxy.sh
+msgid "the egress proxy %s did not start; its log ends with:\\n%s"
+msgstr ""
+
+#: lib/proxy.sh
+msgid "the egress proxy %s has not reported ready yet"
+msgstr ""
+
+#: lib/proxy.sh
+msgid "no proxy for %s; run: cradle up"
+msgstr ""
+
+#: lib/proxy.sh
+msgid "usage: cradle net log"
+msgstr ""
+
+#: lib/render.sh
+msgid "feature %s is not on cradle's allowlist (FEATURES_JSON in lib/render.sh)"
+msgstr ""
+
+#: lib/render.sh
+msgid "no .devcontainer/cradle.json in %s; run: cradle init"
+msgstr ""
+
+#: lib/render.sh
+msgid "%s was edited by hand; move the change into cradle.json, then delete devcontainer.json"
+msgstr ""
+
+#: lib/session.sh
+msgid "the configuration changed; recreating the dev container"
+msgstr ""
+
+#: lib/session.sh
+msgid "dev container is up for %s"
+msgstr ""
+
+#: lib/session.sh
+msgid "no running dev container for %s"
+msgstr ""
+
+#: lib/session.sh
+msgid "stopped the dev container for %s"
+msgstr ""
+
+#: lib/session.sh
+msgid "push with your host credentials? [y/N] "
+msgstr ""
+
+#: lib/session.sh
+msgid "push cancelled"
+msgstr ""
+
+#: lib/setup.sh
+msgid "%s: %s"
+msgstr ""
+
+#: lib/setup.sh
+msgid "run these yourself (they need sudo):"
+msgstr ""
+
+#: lib/setup.sh
+msgid "then run: cradle image build && cradle doctor"
+msgstr ""
+
+#: lib/testd.sh
+msgid "no commit %s"
+msgstr ""
+
+#: lib/testd.sh
+msgid "commit %s has no .github directory (or its objects are damaged)"
+msgstr ""
+
+#: lib/testd.sh
+msgid ".github at %s is already approved"
+msgstr ""
+
+#: lib/testd.sh
+msgid "approve .github at this commit for tier-2 runs? [y/N] "
+msgstr ""
+
+#: lib/testd.sh
+msgid "not approved"
+msgstr ""
+
+#: lib/testd.sh
+msgid "approved .github at %s"
+msgstr ""
+
+#: lib/testd.sh
+msgid "this project is not attached; run: cradle init"
+msgstr ""
+
+#: lib/token.sh
+msgid "GitHub token for"
+msgstr ""
+
+#: lib/token.sh
+msgid "empty token"
+msgstr ""
+
+#: lib/token.sh
+msgid "stored token for %s"
+msgstr ""
+
+#: lib/token.sh
+msgid "no token stored for %s; run: cradle token set %s"
+msgstr ""
+
+#: lib/token.sh
+msgid "could not read the token's expiry from GitHub"
+msgstr ""
+
+#: lib/token.sh
+msgid "token for %s has no expiry date"
+msgstr ""
+
+#: lib/token.sh
+msgid "token for %s expires %s"
+msgstr ""
+
+#: lib/token.sh
+msgid "no GitHub origin remote here; pass owner/repo"
+msgstr ""
+
+#: lib/token.sh
+msgid "usage: cradle token set|show-expiry [owner/repo]"
+msgstr ""
+
