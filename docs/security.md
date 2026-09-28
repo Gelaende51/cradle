@@ -18,6 +18,7 @@ The dev container is where Claude works, so cradle treats everything the contain
 
 - A job marked `"network": true` in `cradle.json` has internet access (podman's bridge) while it runs.
 - Approved workflows are trusted: approval is the operator's review of the `.github` diff.
+- quarry writes session transcripts to `.punt-labs/quarry/captures/` in the project; the container adds that path to `.git/info/exclude` on every start, so `git add -A` leaves them out — a project that force-adds them publishes them.
 - Local docker actions under `.github` are built by the host's podman with network access.
 - act's job containers can outlive a runner that is killed (`systemctl stop`, a timeout).
 - Pushing a workflow change with the container's token must fail because the token lacks the *workflows* permission; this depends on how the token was created and is checked by hand: in the container, change a file under `.github/workflows/`, commit and `git push` — GitHub refuses it.

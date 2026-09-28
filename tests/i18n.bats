@@ -24,3 +24,11 @@ setup() { load test_helper; }
   run env LC_ALL= LANG=de_DE.UTF-8 LANGUAGE=en "$CRADLE_ROOT/bin/cradle" help
   [[ "$output" == *"usage: cradle <command> [args]"* ]]
 }
+
+@test "a message call the extractor cannot read fails the extraction" {
+  for body in "die 'single quoted'" 'warn \' 'msg "%s" "$x"; die '"'"'x'"'"; do
+    printf '%s\n' "$body" > "$BATS_TEST_TMPDIR/x.sh"
+    run python3 "$CRADLE_ROOT/dev/pot.py" "$BATS_TEST_TMPDIR/x.sh"
+    [ "$status" -ne 0 ]; [[ "$output" == *"x.sh"* ]]
+  done
+}

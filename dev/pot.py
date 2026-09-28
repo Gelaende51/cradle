@@ -20,11 +20,23 @@ def bash(s):  # what bash makes of a double-quoted literal without expansions
 def po(s):
     return '"' + s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') + '"'
 
+# Any other call of a message function (single quotes, a message on the next
+# line, ...) would silently stay English: refuse it instead.
+LOOSE = re.compile(r'(?:^|[;&|{(]|\bthen|\belse|\bdo)\s*(?:msg|warn|die|_t|_report)(?=\s)')  # in command position
+STRINGS = re.compile(r'"(?:[^"\\]|\\.)*"|\'[^\']*\'')
+
+def unread_calls(line):
+    code = re.sub(r'(^|\s)#.*$', '', STRINGS.sub('""', line))
+    strict = sum(len(rx.findall(line)) for rx in CALLS)
+    return len(LOOSE.findall(code)) > strict
+
 seen = {}
 for path in sys.argv[1:]:
-    for line in open(path, encoding="utf-8"):
+    for n, line in enumerate(open(path, encoding="utf-8"), 1):
         if line.lstrip().startswith("#"):
             continue
+        if unread_calls(line):
+            sys.exit(f"{path}:{n}: a message call pot.py cannot read (use a double-quoted literal on the same line): {line.strip()}")
         for rx in CALLS:
             for m in rx.finditer(line):
                 raw = m.group(1)

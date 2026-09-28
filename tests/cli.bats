@@ -41,3 +41,7 @@ setup() { load test_helper; setup_isolated_path; }
   run grep -rn '/home/niemand' "$CRADLE_ROOT/README.md" "$CRADLE_ROOT/docs"
   [ "$status" -eq 1 ]
 }
+
+@test "cradle's own repo never tracks quarry captures" {
+  git -C "$CRADLE_ROOT" check-ignore -q .punt-labs/quarry/captures/session-12345678.md
+}

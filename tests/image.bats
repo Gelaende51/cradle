@@ -36,3 +36,7 @@ setup() { load test_helper; setup_isolated_path; }
 @test "the first start keeps beads out of the project's git" {
   grep -qx '\[ -d .beads \] || bd init --non-interactive --skip-agents --skip-hooks --setup-exclude' "$CRADLE_ROOT/image/postcreate.sh"
 }
+
+@test "every start keeps quarry's session captures out of the project's git" {
+  grep -qF "grep -qxF '.punt-labs/quarry/captures/' \"\$ex\" 2>/dev/null || echo '.punt-labs/quarry/captures/' >> \"\$ex\"" "$CRADLE_ROOT/image/poststart.sh"
+}
