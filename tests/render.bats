@@ -15,7 +15,7 @@ dc_json() { tail -n +2 "$P/.devcontainer/devcontainer.json"; }
   render_devcontainer "$P"
   [ "$(dc_json | jq -r .image)" = "localhost/cradle-base:$(cat "$CRADLE_ROOT/VERSION")" ]
   dc_json | jq -e '.features["ghcr.io/devcontainers/features/node:1"].version == "lts"'
-  [ "$(dc_json | jq -r .workspaceFolder)" = "/workspaces/file-path-edit" ]
+  [ "$(dc_json | jq -r .workspaceFolder)" = "/home/dev/src/file-path-edit" ]
   dc_json | jq -e '.mounts | index("source=cradle-file-path-edit-data,target=/home/dev/.local/share/cradle,type=volume")'
   dc_json | jq -e '.runArgs | index("--memory=3g") and index("--cap-drop=ALL")'
   [ "$(dc_json | jq -r .remoteEnv.GH_TOKEN)" = '${localEnv:GH_TOKEN}' ]
@@ -24,8 +24,8 @@ dc_json() { tail -n +2 "$P/.devcontainer/devcontainer.json"; }
 @test "masks a directory with tmpfs, a file with /dev/null, skips a missing path" {
   mkdir "$P/.personal"; touch "$P/secret.env"
   render_devcontainer "$P"
-  dc_json | jq -e '.runArgs | index("--tmpfs=/workspaces/file-path-edit/.personal:size=1k,mode=0500")'
-  dc_json | jq -e '.runArgs | index("--volume=/dev/null:/workspaces/file-path-edit/secret.env:ro")'
+  dc_json | jq -e '.runArgs | index("--tmpfs=/home/dev/src/file-path-edit/.personal:size=1k,mode=0500")'
+  dc_json | jq -e '.runArgs | index("--volume=/dev/null:/home/dev/src/file-path-edit/secret.env:ro")'
   [ "$(dc_json | jq '[.runArgs[] | select(test("absent"))] | length')" -eq 0 ]
   [ ! -e "$P/absent" ]
 }
