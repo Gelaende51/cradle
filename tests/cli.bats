@@ -19,3 +19,9 @@ setup() { load test_helper; setup_isolated_path; }
     [[ "$output" == *"$c"* ]]
   done
 }
+
+@test "cradle's CI test job passes cradle's own tier-2 job check" {
+  . "$CRADLE_ROOT/lib/common.sh"
+  run python3 -c 'import json, sys, yaml; d = yaml.safe_load(open(sys.argv[1]))["jobs"]["test"]; sys.exit(0 if d["runs-on"] == "ubuntu-latest" and "container" not in d and "services" not in d else 1)' "$CRADLE_ROOT/.github/workflows/ci.yml"
+  [ "$status" -eq 0 ]
+}
