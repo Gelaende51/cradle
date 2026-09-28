@@ -32,3 +32,7 @@ setup() { load test_helper; setup_isolated_path; }
   [ "$status" -eq 1 ]
   [[ "$output" == *"usage: cradle image build"* ]]
 }
+
+@test "the first start keeps beads out of the project's git" {
+  grep -qx '\[ -d .beads \] || bd init --non-interactive --skip-agents --skip-hooks --setup-exclude' "$CRADLE_ROOT/image/postcreate.sh"
+}

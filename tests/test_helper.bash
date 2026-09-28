@@ -6,6 +6,8 @@ CRADLE_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 export CRADLE_ROOT
 # tests match English messages; the i18n test sets its own language
 export LANGUAGE=en
+# fixture commits must not run the hooks of the machine (or container) running the tests
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null
 BASE_TOOLS=(bash env cat grep sed awk jq mkdir rm cp mv ls dirname basename
   readlink realpath tr cut sort head tail wc mktemp date find cmp touch chmod
   id gettext git sha256sum xargs tee sleep ls ln stat python3 flock timeout od)

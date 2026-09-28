@@ -51,9 +51,11 @@ setup() {
   "$CRADLE_ROOT/bin/cradle" init
   git -c user.name=t -c user.email=t@x commit -q --allow-empty -m x
   . "$CRADLE_ROOT/lib/common.sh"; . "$CRADLE_ROOT/lib/render.sh"; d=$(testd_dir "$(project_key "$P")")
-  ( sleep 1; f=$(ls "$d/req/new"); id=${f%.json}; mkdir -p "$d/results/$id"
+  # answer the request once it is queued (a slow machine may take longer than a second)
+  ( for ((i = 0; i < 150; i++)); do f=$(ls "$d/req/new"); [[ -n $f ]] && break; sleep 0.2; done
+    id=${f%.json}; mkdir -p "$d/results/$id"
     echo '{"status":"passed","reason":"job test passed"}' > "$d/results/$id/status.json" ) &
-  run "$CRADLE_ROOT/bin/cradle" test test
+  CRADLE_REQUEST_WAIT=30 run "$CRADLE_ROOT/bin/cradle" test test
   [ "$status" -eq 0 ]; [[ "$output" == *"passed: job test passed"* ]]
 }
 

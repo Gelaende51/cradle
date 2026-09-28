@@ -18,7 +18,8 @@ if [ ! -f "$HOME/.punt-labs/ethos/identities/$handle.yaml" ]; then
   ethos seed >/dev/null && ethos setup --file "$id_file"
 fi
 ethos enable
-[ -d .beads ] || bd init
+# beads keeps its data in the project but out of its git: no agent files, no hooks, no commit
+[ -d .beads ] || bd init --non-interactive --skip-agents --skip-hooks --setup-exclude
 
 # punt pii runs first in pre-commit, so a later "exit 0" in a chained section cannot skip it.
 pc="$hooks/pre-commit"
