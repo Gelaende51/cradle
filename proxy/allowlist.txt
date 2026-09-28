@@ -1,0 +1,23 @@
+# cradle default egress allowlist (squid dstdomain syntax: a leading dot also
+# allows every subdomain). Projects add domains in cradle.json "allowedDomains".
+# Claude Code: API, login, telemetry
+.anthropic.com
+.claude.ai
+.claude.com
+# GitHub: git, API, release assets, raw content
+.github.com
+.githubusercontent.com
+# npm
+registry.npmjs.org
+# PyPI and uv
+pypi.org
+files.pythonhosted.org
+# Go module proxy and checksum DB
+proxy.golang.org
+sum.golang.org
+# Rust
+crates.io
+static.crates.io
+index.crates.io
+# Debian
+deb.debian.org

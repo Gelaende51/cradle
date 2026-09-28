@@ -6,6 +6,8 @@
 . "$CRADLE_ROOT/lib/config.sh"
 # shellcheck source=lib/token.sh
 . "$CRADLE_ROOT/lib/token.sh"
+# shellcheck source=lib/render.sh
+. "$CRADLE_ROOT/lib/render.sh"
 DOCTOR_FAIL=0
 
 # _report LEVEL NAME FORMAT [ARGS...]
@@ -52,15 +54,28 @@ check_devcontainer_version() {
 
 check_image() {
   have podman || return 0
-  local tag; tag="cradle-base:$(cradle_version)"
-  if podman image exists "$tag"; then _report ok image "%s" "$tag"
-  else _report warn image "%s not built; run: cradle image build" "$tag"; fi
+  local n tag
+  for n in cradle-base cradle-proxy; do
+    tag="$n:$(cradle_version)"
+    if podman image exists "$tag"; then _report ok image "%s" "$tag"
+    else _report warn image "%s not built; run: cradle image build" "$tag"; fi
+  done
 }
 
 check_config() {
   have podman || return 0
   if config_is_current; then _report ok config "config volume matches the kit"
   else _report warn config "config volume is missing or stale; run: cradle config sync"; fi
+}
+
+# check_proxy: in an attached project, its egress proxy should be running.
+check_proxy() {
+  have podman || return 0
+  [[ -f .devcontainer/cradle.json ]] || return 0
+  local name; name="cradle-proxy-$(project_key "$PWD")"
+  if [[ $(podman inspect --format '{{.State.Running}}' "$name" 2>/dev/null) == true ]]; then
+    _report ok proxy "%s is running" "$name"
+  else _report warn proxy "%s is not running; run: cradle up" "$name"; fi
 }
 
 check_token() {
@@ -107,6 +122,7 @@ cmd_doctor() {
   check_cmd warn act
   check_image
   check_config
+  check_proxy
   check_token
   check_disk
   check_ram

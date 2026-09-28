@@ -10,6 +10,8 @@ cleanup() {
   (cd "$P" 2>/dev/null && "$C" down >/dev/null 2>&1)
   # shellcheck disable=SC2046  # one id per word
   podman rm -f $(podman ps -aq --filter "label=devcontainer.local_folder=$P") >/dev/null 2>&1
+  podman ps -aq --filter name=cradle-proxy-fixture-proj- | xargs -r podman rm -f >/dev/null 2>&1
+  podman network ls -q --filter name=cradle-fixture-proj- | xargs -r podman network rm -f >/dev/null 2>&1
   podman volume ls -q --filter name=cradle-fixture-proj- | xargs -r podman volume rm -f >/dev/null 2>&1
   rm -rf "$T"
 }
@@ -40,10 +42,17 @@ check "hooks path in volume"     eq "$(in_c 'git config core.hooksPath')" /home/
 check "host .git/hooks untouched" absent test -e "$P/.git/hooks/pre-commit"
 check ".git/hooks read-only"      absent in_c 'touch "$CRADLE_WORKSPACE/.git/hooks/pre-commit" 2>/dev/null'
 check ".git/config read-only"     absent in_c 'git config core.fsmonitor /tmp/x 2>/dev/null'
+check ".devcontainer read-only"  absent in_c 'touch "$CRADLE_WORKSPACE/.devcontainer/cradle.json" 2>/dev/null'
 check "config volume mounted"    in_c 'test -f ~/.claude/CLAUDE.md && test -f ~/.claude/cradle-rules/orchestrator.md'
 check "punt tools answer"        in_c 'bd --version && ethos version && punt version && quarry status >/dev/null'
 in_c 'touch "$CRADLE_WORKSPACE/made-in-container"'
 check "bind-mount ownership"     eq "$(stat -c %U "$P/made-in-container")" "$(id -un)"
+
+check "allowed domain via proxy" eq "$(in_c 'curl -s -o /dev/null -w "%{http_code}" --max-time 20 https://api.github.com/zen')" 200
+check "other domain blocked"     absent in_c 'curl -sf --max-time 20 https://example.com >/dev/null'
+check "no direct route"          absent in_c 'curl -s --max-time 5 --noproxy "*" https://github.com >/dev/null'
+check "net log names the block"  bash -c "'$C' net log | grep -q 'example.com:443'"
+check "claude reaches its API"   in_c 'curl -s -o /dev/null --max-time 20 https://api.anthropic.com'
 
 id1=$(podman ps -q --filter "label=devcontainer.local_folder=$P")
 jq '.memory = "2g"' .devcontainer/cradle.json > c.tmp && mv c.tmp .devcontainer/cradle.json

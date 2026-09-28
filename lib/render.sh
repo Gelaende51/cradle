@@ -16,6 +16,12 @@ project_slug() {
   printf '%s' "${b:-project}"
 }
 
+# project_key DIR: slug plus a hash of the absolute path, so two projects with the
+# same folder name keep apart (volumes, networks, proxies).
+project_key() {
+  printf '%s-%s' "$(project_slug "$1")" "$(printf '%s' "$1" | sha256sum | cut -c1-8)"
+}
+
 # _mask_args DIR WORKSPACE: one podman run argument per existing mask path.
 _mask_args() {
   local dir=$1 ws=$2 m
@@ -27,9 +33,11 @@ _mask_args() {
 }
 
 # _git_args DIR WORKSPACE: the host runs .git/hooks and reads .git/config (fsmonitor,
-# hooksPath), so the container sees both read-only.
+# hooksPath), and renders its next container from .devcontainer, so the container
+# sees all three read-only.
 _git_args() {
   local dir=$1 ws=$2
+  printf '%s\n' "--volume=$dir/.devcontainer:$ws/.devcontainer:ro"
   [[ -d $dir/.git ]] || return 0
   mkdir -p "$dir/.git/hooks"
   printf '%s\n' "--volume=$dir/.git/hooks:$ws/.git/hooks:ro"
@@ -66,11 +74,10 @@ render_devcontainer() {
   ws="/home/dev/src/$slug"   # quarry only indexes directories under $HOME
   _check_features "$cfg"
   extra=$({ _mask_args "$dir" "$ws"; _git_args "$dir" "$ws"; } | jq -R . | jq -s .)
-  # the path hash keeps two projects with the same folder name apart
-  vol="cradle-$slug-$(printf '%s' "$dir" | sha256sum | cut -c1-8)-data"
+  vol="cradle-$(project_key "$dir")-data"
   # shellcheck disable=SC2016  # ${localWorkspaceFolder} and ${localEnv:…} are devcontainer variables
   obj=$(jq -n --slurpfile cfg "$cfg" --argjson fmap "$FEATURES_JSON" --argjson masks "$extra" \
-      --arg slug "$slug" --arg ws "$ws" --arg vol "$vol" --arg image "localhost/cradle-base:$(cradle_version)" '
+      --arg slug "$slug" --arg key "$(project_key "$dir")" --arg ws "$ws" --arg vol "$vol" --arg image "localhost/cradle-base:$(cradle_version)" '
       $cfg[0] as $c | {
         name: ("cradle-" + $slug),
         image: $image,
@@ -81,7 +88,8 @@ render_devcontainer() {
         workspaceFolder: $ws,
         workspaceMount: ("source=${localWorkspaceFolder},target=" + $ws + ",type=bind"),
         runArgs: (["--userns=keep-id:uid=1000,gid=1000", "--security-opt=no-new-privileges",
-                   "--cap-drop=ALL", ("--memory=" + ($c.memory // "3g"))] + $masks),
+                   "--cap-drop=ALL", ("--memory=" + ($c.memory // "3g")),
+                   ("--network=cradle-" + $key)] + $masks),
         mounts: ["source=cradle-claude,target=/home/dev/.claude,type=volume",
                  "source=cradle-punt,target=/home/dev/.punt-labs,type=volume",
                  ("source=" + $vol + ",target=/home/dev/.local/share/cradle,type=volume")],
@@ -90,6 +98,9 @@ render_devcontainer() {
           CRADLE_WORKSPACE: $ws,
           QUARRY_ROOT: "/home/dev/.local/share/cradle/quarry",
           HF_HUB_OFFLINE: "1",
+          HTTP_PROXY: "http://proxy:3128", HTTPS_PROXY: "http://proxy:3128",
+          http_proxy: "http://proxy:3128", https_proxy: "http://proxy:3128",
+          NO_PROXY: "localhost,127.0.0.1,::1", no_proxy: "localhost,127.0.0.1,::1",
           GIT_CONFIG_COUNT: "1",
           GIT_CONFIG_KEY_0: "core.hooksPath",
           GIT_CONFIG_VALUE_0: "/home/dev/.local/share/cradle/hooks"
