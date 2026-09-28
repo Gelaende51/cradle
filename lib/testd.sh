@@ -115,3 +115,69 @@ cmd_approve_workflows() {
   approved_add "$key" "$tree" "$ref"
   msg "approved .github at %s" "${ref:0:12}"
 }
+
+_runs_dir() { printf '%s' "${XDG_CACHE_HOME:-$HOME/.cache}/cradle/runs"; }
+
+# _recover KEY DIR: a previous runner died; report and clean what it left.
+_recover() {
+  local key=$1 dir=$2 d f id w; d=$(testd_dir "$key")
+  for f in "$d"/processing/*.json; do
+    [[ -e $f ]] || continue
+    id=$(basename "$f" .json)
+    result_write "$key" "$id" aborted "the test runner stopped before this request finished" >/dev/null
+    mv -- "$f" "$d/done/"
+  done
+  for w in "$(_runs_dir)/$key"-*; do
+    [[ -e $w ]] || continue
+    _git_host -C "$dir" worktree remove --force "$w" 2>/dev/null || rm -rf -- "$w"
+  done
+  _git_host -C "$dir" worktree prune
+}
+
+# _run_job KEY DIR ID REF JOB WF: act in a worktree of REF; prints the status.
+_run_job() {
+  local key=$1 dir=$2 id=$3 ref=$4 job=$5 wf=$6 d res run net mins rc
+  d=$(testd_dir "$key"); res="$d/results/$id"; run="$(_runs_dir)/$key-$id"
+  mkdir -p "$res/artifacts" "$(_runs_dir)"
+  net=none
+  [[ $(jq -r --arg j "$job" '[.testJobs[] | select(.job == $j)][0].network // false' "$dir/.devcontainer/cradle.json") == true ]] && net=podman
+  mins=$(jq -r '.testTimeout // 30' "$dir/.devcontainer/cradle.json")
+  [[ $mins =~ ^[0-9]{1,3}$ ]] || mins=30
+  _git_host -C "$dir" worktree add -q --detach "$run" "$ref" >/dev/null 2>&1 || { echo "failed cannot create a worktree of ${ref:0:12}"; return 0; }
+  rc=0
+  ( cd "$run" && timeout "${mins}m" act -W ".github/workflows/$wf" -j "$job" -P "ubuntu-latest=$ACT_IMAGE" \
+      --container-daemon-socket - --network "$net" --container-options "--memory=2g" --rm \
+      --artifact-server-path "$res/artifacts" ) > "$res/act.log" 2>&1 || rc=$?
+  _git_host -C "$dir" worktree remove --force "$run" 2>/dev/null || rm -rf -- "$run"
+  case $rc in
+    0) echo "passed job $job passed" ;;
+    124) echo "timeout job $job ran longer than $mins minutes" ;;
+    *) echo "failed job $job failed (act exit $rc); see act.log" ;;
+  esac
+}
+
+testd_run() {
+  local key=$1 d dir id out ref job wf status reason
+  d=$(testd_dir "$key"); dir=$(cat "$d/project")
+  # shellcheck source=image/versions.env
+  . "$CRADLE_ROOT/image/versions.env"
+  exec 9> "${XDG_STATE_HOME:-$HOME/.local/state}/cradle/testd/run.lock"
+  flock 9   # one run at a time, across projects
+  _recover "$key" "$dir"
+  while :; do
+    request_take "$key" >/dev/null
+    id=$(find "$d/processing" -maxdepth 1 -name '*.json' -printf '%f\n' | sort | head -n 1)
+    [[ -n $id ]] || break
+    id=${id%.json}
+    if out=$(request_check "$dir" "$d/processing/$id.json") && read -r ref job <<< "$out" \
+       && out=$(job_check "$dir" "$ref" "$job"); then
+      wf=$out
+      read -r status reason <<< "$(_run_job "$key" "$dir" "$id" "$ref" "$job" "$wf")"
+      result_write "$key" "$id" "$status" "$reason" "$job" "$ref" >/dev/null
+    else
+      result_write "$key" "$id" rejected "$out" "${job:-}" "${ref:-}" >/dev/null
+    fi
+    mv -- "$d/processing/$id.json" "$d/done/"
+    ref=""; job=""
+  done
+}

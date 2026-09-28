@@ -1,5 +1,5 @@
 SHELL := bash
-SH_FILES := bin/cradle $(wildcard lib/*.sh) $(wildcard image/*.sh) $(wildcard tests/integration/*.sh)
+SH_FILES := bin/cradle bin/cradle-testd $(wildcard lib/*.sh) $(wildcard image/*.sh) $(wildcard tests/integration/*.sh)
 
 .PHONY: check lint test integration proxy-smoke
 check: lint test

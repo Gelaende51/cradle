@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# cradle-testd KEY: process a project's tier-2 test requests (started by cradle-testd@KEY.path).
+set -euo pipefail
+CRADLE_ROOT=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
+export CRADLE_ROOT
+# shellcheck source=lib/common.sh
+. "$CRADLE_ROOT/lib/common.sh"
+# shellcheck source=lib/testd.sh
+. "$CRADLE_ROOT/lib/testd.sh"
+[[ ${1:-} =~ ^[a-z0-9-]+$ ]] || die "usage: cradle-testd PROJECT-KEY"
+[[ -f $(testd_dir "$1")/project ]] || die "unknown project key %s" "$1"
+testd_run "$1"
