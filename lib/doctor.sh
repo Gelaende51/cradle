@@ -2,6 +2,8 @@
 # cradle doctor: host health checks, one line per check.
 # shellcheck source=image/versions.env
 . "$CRADLE_ROOT/image/versions.env"
+# shellcheck source=lib/config.sh
+. "$CRADLE_ROOT/lib/config.sh"
 DOCTOR_FAIL=0
 
 # _report LEVEL NAME FORMAT [ARGS...]
@@ -53,6 +55,12 @@ check_image() {
   else _report warn image "%s not built; run: cradle image build" "$tag"; fi
 }
 
+check_config() {
+  have podman || return 0
+  if config_is_current; then _report ok config "config volume matches the kit"
+  else _report warn config "config volume is missing or stale; run: cradle config sync"; fi
+}
+
 check_cgroup_memory() {
   local uid; uid=$(id -u)
   local f="${CRADLE_CGROUP:-/sys/fs/cgroup}/user.slice/user-$uid.slice/user@$uid.service/cgroup.controllers"
@@ -84,6 +92,7 @@ cmd_doctor() {
   check_cmd fail jq
   check_cmd warn act
   check_image
+  check_config
   check_disk
   check_ram
   return "$DOCTOR_FAIL"
