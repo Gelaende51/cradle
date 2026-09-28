@@ -21,3 +21,6 @@ have() { command -v "$1" >/dev/null 2>&1; }
 need() { have "$1" || die "missing command: %s" "$1"; }
 
 cradle_version() { cat "$CRADLE_ROOT/VERSION"; }
+
+# Host git on a tree a container wrote to: never run its hooks or fsmonitor.
+_git_host() { git -c core.hooksPath=/dev/null -c core.fsmonitor=false "$@"; }

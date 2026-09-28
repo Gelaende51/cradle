@@ -22,6 +22,9 @@ project_key() {
   printf '%s-%s' "$(project_slug "$1")" "$(printf '%s' "$1" | sha256sum | cut -c1-8)"
 }
 
+# testd_dir KEY: the host state of a project's tier-2 test queue.
+testd_dir() { printf '%s' "${XDG_STATE_HOME:-$HOME/.local/state}/cradle/testd/$1"; }
+
 # _mask_args DIR WORKSPACE: one podman run argument per existing mask path.
 _mask_args() {
   local dir=$1 ws=$2 m

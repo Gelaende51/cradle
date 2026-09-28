@@ -72,9 +72,6 @@ _exec() {
 cmd_claude() { cmd_up >/dev/null; _exec claude "$@"; }
 cmd_shell()  { cmd_up >/dev/null; _exec bash -l; }
 
-# Host git on a tree a container wrote to: never run its hooks or fsmonitor.
-_git_host() { git -c core.hooksPath=/dev/null -c core.fsmonitor=false "$@"; }
-
 cmd_push() {
   local yes=0 up a
   [[ ${1:-} == --yes ]] && { yes=1; shift; }
