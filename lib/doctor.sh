@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# cradle doctor: host health checks, one line per check.
+# shellcheck source=image/versions.env
+. "$CRADLE_ROOT/image/versions.env"
+DOCTOR_FAIL=0
+
+# _report LEVEL NAME FORMAT [ARGS...]
+_report() {
+  local level=$1 name=$2 f; f=$(_t "$3"); shift 3
+  # shellcheck disable=SC2059
+  printf "%-4s  %-20s  $f\n" "$level" "$name" "$@"
+  [[ $level == fail ]] && DOCTOR_FAIL=1
+  return 0
+}
+
+check_subids() {
+  local etc=${CRADLE_ETC:-/etc} u; u=$(id -un)
+  if grep -q "^$u:" "$etc/subuid" 2>/dev/null && grep -q "^$u:" "$etc/subgid" 2>/dev/null; then
+    _report ok subuid "subordinate id ranges configured"
+  else
+    _report fail subuid "no subuid/subgid range for %s; run: sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 %s && podman system migrate" "$u" "$u"
+  fi
+}
+
+# check_cmd LEVEL_IF_MISSING COMMAND
+check_cmd() {
+  if have "$2"; then _report ok "$2" "installed"; else _report "$1" "$2" "not installed; run: cradle setup"; fi
+}
+
+check_rootless() {
+  have podman || return 0
+  if [[ $(podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null) == true ]]; then
+    _report ok rootless "podman runs rootless"
+  else
+    _report fail rootless "podman is not running rootless"
+  fi
+}
+
+check_devcontainer_version() {
+  have devcontainer || return 0
+  local v; v=$(devcontainer --version 2>/dev/null)
+  if [[ $v == "$DEVCONTAINER_CLI_VERSION" ]]; then
+    _report ok devcontainer-version "%s" "$v"
+  else
+    _report warn devcontainer-version "found %s, cradle is tested with %s" "$v" "$DEVCONTAINER_CLI_VERSION"
+  fi
+}
+
+check_image() {
+  have podman || return 0
+  local tag; tag="cradle-base:$(cradle_version)"
+  if podman image exists "$tag"; then _report ok image "%s" "$tag"
+  else _report warn image "%s not built; run: cradle image build" "$tag"; fi
+}
+
+check_cgroup_memory() {
+  local uid; uid=$(id -u)
+  local f="${CRADLE_CGROUP:-/sys/fs/cgroup}/user.slice/user-$uid.slice/user@$uid.service/cgroup.controllers"
+  if grep -qw memory "$f" 2>/dev/null; then _report ok cgroup-memory "memory limits are enforced"
+  else _report warn cgroup-memory "memory controller not delegated; container memory limits are ignored"; fi
+}
+
+check_disk() {
+  local kb; kb=$(df --output=avail -k "$HOME" | tail -1 | tr -d ' ')
+  if (( kb >= 15 * 1024 * 1024 )); then _report ok disk "%s GB free" "$(( kb / 1024 / 1024 ))"
+  else _report warn disk "only %s GB free in \$HOME; images and test runs want 15" "$(( kb / 1024 / 1024 ))"; fi
+}
+
+check_ram() {
+  local mb; mb=$(awk '/^MemAvailable:/ {print int($2 / 1024)}' "${CRADLE_PROC:-/proc}/meminfo")
+  if (( mb >= 3072 )); then _report ok ram "%s MB available" "$mb"
+  else _report warn ram "only %s MB available; a dev container is limited to 3072" "$mb"; fi
+}
+
+cmd_doctor() {
+  check_subids
+  check_cmd fail podman
+  check_rootless
+  check_cgroup_memory
+  check_cmd fail devcontainer
+  check_devcontainer_version
+  check_cmd fail gh
+  check_cmd fail secret-tool
+  check_cmd fail jq
+  check_cmd warn act
+  check_image
+  check_disk
+  check_ram
+  return "$DOCTOR_FAIL"
+}
