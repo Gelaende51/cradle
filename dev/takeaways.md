@@ -76,3 +76,13 @@ so it fails in a repo without git identity; the identity file
 
 ## Read-only .git/hooks and .git/config inside the container
 - Bind-mounting both read-only over the workspace bind mount works on rootless podman; git's lockfile rename onto the mounted config fails, so `git config` in the container is refused. `bd init` (beads 1.3.0) and `ethos enable` still succeed with it.
+
+## Rootless podman: an internal network gives no outside DNS, and "podman" has DNS off
+- A container on an `--internal` network gets only that network's aardvark as resolver, which answers NXDOMAIN for outside names (good: no DNS exfiltration from the dev container).
+- A container on both the internal network and podman's default `podman` network still resolves only through the internal aardvark, because the default network has `dns_enabled: false`. squid then answers every CONNECT with 503. A user-created (non-internal) network has DNS on; with it the proxy resolves outside names. cradle's proxy uses a dedicated network `cradle-egress`.
+- Multiple `--network NAME[:alias=x]` flags work on `podman run` for bridge networks.
+
+## squid on Alpine 3.24 as a non-root egress filter
+- Runs as `USER squid` with `--cap-drop=ALL --read-only` given `pid_filename none`, logs to stdio, no cache_dir.
+- It ignores SIGTERM for `shutdown_lifetime` (default 30 s), longer than podman's 10 s stop timeout; `shutdown_lifetime 0 seconds` fixes it.
+- `dstdomain -n` refuses IP literals (no reverse lookup); a refused CONNECT makes curl report `%{http_code}` 000, so tests check refusals over plain HTTP (403).
