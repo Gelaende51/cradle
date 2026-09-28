@@ -61,3 +61,19 @@ setup() {
   run cradle doctor
   [[ "$output" == *"warn"*"config"*"cradle config sync"* ]]
 }
+
+@test "a GitHub repo without a stored token warns" {
+  git init -q repo && cd repo && git remote add origin https://github.com/Gelaende51/cradle.git
+  stub secret-tool 1
+  run cradle doctor
+  [[ "$output" == *"warn"*"token"*"cradle token set"* ]]
+}
+
+@test "a token that expires soon warns" {
+  git init -q repo && cd repo && git remote add origin https://github.com/Gelaende51/cradle.git
+  stub secret-tool 0 ghp_x
+  soon=$(date -u -d '+3 days' '+%Y-%m-%d %H:%M:%S UTC')
+  stub curl 0 $'HTTP/2 200\r\ngithub-authentication-token-expiration: '"$soon"$'\r\n'
+  run cradle doctor
+  [[ "$output" == *"warn"*"token"*"renew it"* ]]
+}

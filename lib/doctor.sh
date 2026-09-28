@@ -4,6 +4,8 @@
 . "$CRADLE_ROOT/image/versions.env"
 # shellcheck source=lib/config.sh
 . "$CRADLE_ROOT/lib/config.sh"
+# shellcheck source=lib/token.sh
+. "$CRADLE_ROOT/lib/token.sh"
 DOCTOR_FAIL=0
 
 # _report LEVEL NAME FORMAT [ARGS...]
@@ -61,6 +63,18 @@ check_config() {
   else _report warn config "config volume is missing or stale; run: cradle config sync"; fi
 }
 
+check_token() {
+  local repo d days
+  repo=$(repo_slug) || { _report ok token "no GitHub origin here; no token needed"; return 0; }
+  have secret-tool || return 0
+  token_lookup "$repo" >/dev/null || { _report warn token "no token for %s; run: cradle token set" "$repo"; return 0; }
+  d=$(token_expiry_date "$repo") || { _report warn token "could not read the expiry of the token for %s" "$repo"; return 0; }
+  [[ -n $d ]] || { _report ok token "token for %s has no expiry" "$repo"; return 0; }
+  days=$(( ($(date -d "$d" +%s) - $(date +%s)) / 86400 ))
+  if (( days >= 7 )); then _report ok token "token for %s is valid for %s days" "$repo" "$days"
+  else _report warn token "token for %s expires in %s days; renew it" "$repo" "$days"; fi
+}
+
 check_cgroup_memory() {
   local uid; uid=$(id -u)
   local f="${CRADLE_CGROUP:-/sys/fs/cgroup}/user.slice/user-$uid.slice/user@$uid.service/cgroup.controllers"
@@ -93,6 +107,7 @@ cmd_doctor() {
   check_cmd warn act
   check_image
   check_config
+  check_token
   check_disk
   check_ram
   return "$DOCTOR_FAIL"
