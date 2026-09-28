@@ -1,6 +1,6 @@
 # Spike A: devcontainer CLI on rootless podman
 
-Date: 2026-09-28 · @devcontainers/cli 0.89.0 · podman 6.1.2 rootless · host user niemand 1000:1001
+Date: 2026-09-28 · @devcontainers/cli 0.89.0 · podman 6.1.2 rootless · host user uid 1000
 
 Fixture: `.devcontainer/devcontainer.json` (base:debian + node feature,
 `--userns=keep-id:uid=1000,gid=1000 --security-opt=no-new-privileges --cap-drop=ALL --memory=3g`).
@@ -16,8 +16,8 @@ CapEff:	0000000000000000
 ls: cannot access '/run/podman': No such file or directory
 ```
 
-On the host: `niemand:niemand owned-by-container`. Label:
-`devcontainer.local_folder=/home/niemand/building_stuff/cradle/dev/spikes/devcontainer`.
+On the host: `<user>:<group> owned-by-container`. Label:
+`devcontainer.local_folder=~/building_stuff/cradle/dev/spikes/devcontainer`.
 
 **Result: works with `--userns=keep-id:uid=1000,gid=1000`.** Ownership on the
 bind mount is correct, all capabilities are dropped, the 3 GiB memory limit
