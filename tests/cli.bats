@@ -30,3 +30,14 @@ setup() { load test_helper; setup_isolated_path; }
   git init -q "$BATS_TEST_TMPDIR/r"
   [ "$(git -C "$BATS_TEST_TMPDIR/r" config core.hooksPath)" = /dev/null ]
 }
+
+@test "the READMEs link each other and every docs page exists" {
+  for f in README.md docs/i18n/README.de.md docs/architecture.md docs/security.md docs/attaching.md docs/troubleshooting.md; do
+    [ -s "$CRADLE_ROOT/$f" ]
+  done
+  grep -q 'docs/i18n/README.de.md' "$CRADLE_ROOT/README.md"
+  grep -q '../../README.md' "$CRADLE_ROOT/docs/i18n/README.de.md"
+  grep -q '^- \*\*Usage\*\* — ' "$CRADLE_ROOT/README.md"
+  run grep -rn '/home/niemand' "$CRADLE_ROOT/README.md" "$CRADLE_ROOT/docs"
+  [ "$status" -eq 1 ]
+}
