@@ -27,6 +27,9 @@ allowlist_merge() {
   extra=$(printf '%s\n' "$extra" | tr '[:upper:]' '[:lower:]' | sed 's/^\*\././')
   bad=$(printf '%s\n' "$extra" | grep -Ev '^$|^\.?([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$' | head -n1 || true)
   [[ -z $bad ]] || die "allowedDomains: %s is not a domain (write example.com, or .example.com for its subdomains too)" "$bad"
+  # names that resolve to the host, the LAN or other containers (squid also refuses private addresses)
+  bad=$(printf '%s\n' "$extra" | grep -E '\.(internal|local|localhost|podman|arpa|lan|home)$' | head -n1 || true)
+  [[ -z $bad ]] || die "allowedDomains: %s names a local host; the proxy only reaches the internet" "$bad"
   { grep -Ev '^[[:space:]]*(#|$)' "$CRADLE_ROOT/proxy/allowlist.txt"; printf '%s\n' "$extra"; } \
     | awk 'NF' | sort -u | _drop_covered
 }
@@ -37,6 +40,7 @@ proxy_up() {
   list="$(_proxy_dir "$dir")/allowlist"
   mkdir -p "$(dirname "$list")"
   allowlist_merge "$dir" > "$list.new"
+  chmod 644 "$list.new"   # squid runs as its own user and must read it
   mv "$list.new" "$list"
   podman network exists "$net" || podman network create --internal "$net" >/dev/null
   podman network exists cradle-egress || podman network create cradle-egress >/dev/null
@@ -49,6 +53,20 @@ proxy_up() {
     --network cradle-egress --network "$net:alias=proxy" \
     --cap-drop=ALL --security-opt=no-new-privileges --read-only --memory=128m \
     -v "$list:/etc/squid/allowlist:ro" "localhost/cradle-proxy:$(cradle_version)" >/dev/null
+  _proxy_wait "$name"
+}
+
+# _proxy_wait NAME: until squid accepts connections; stops with its log when it exited.
+_proxy_wait() {
+  local name=$1 i
+  for ((i = 0; i < ${CRADLE_PROXY_WAIT:-20}; i++)); do
+    podman logs "$name" 2>&1 | grep -q 'Accepting HTTP' && return 0
+    if [[ $(podman inspect --format '{{.State.Running}}' "$name" 2>/dev/null) == false ]]; then
+      die "the egress proxy %s did not start; its log ends with:\n%s" "$name" "$(podman logs "$name" 2>&1 | tail -n 5)"
+    fi
+    sleep 0.25
+  done
+  warn "the egress proxy %s has not reported ready yet" "$name"
 }
 
 proxy_down() { podman rm -f "cradle-proxy-$(project_key "$1")" >/dev/null 2>&1 || true; }

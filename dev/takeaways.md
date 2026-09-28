@@ -92,3 +92,7 @@ so it fails in a repo without git identity; the identity file
 
 ## Egress through the proxy (integration, 2026-09-28)
 - curl, and Claude's API endpoint, work through `HTTPS_PROXY=http://proxy:3128`; direct connections and outside DNS fail; `cradle net log` shows the refused `example.com:443`.
+
+## squid and local destinations
+- squid reads the container's `/etc/hosts`, where podman maps `host.containers.internal` to the host (169.254.1.2 via pasta); `hosts_file none` stops that (the name then fails to resolve: 503).
+- `acl local dst <private ranges>` + `http_access deny local` refuses public names that resolve to private addresses (checked with `10-0-0-1.nip.io` → 403). On this host, DNS answers for names that resolve to 127.x or 169.254.x come back empty (resolver rebind protection), so those fail even earlier.

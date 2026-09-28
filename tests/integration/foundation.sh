@@ -42,6 +42,7 @@ check "hooks path in volume"     eq "$(in_c 'git config core.hooksPath')" /home/
 check "host .git/hooks untouched" absent test -e "$P/.git/hooks/pre-commit"
 check ".git/hooks read-only"      absent in_c 'touch "$CRADLE_WORKSPACE/.git/hooks/pre-commit" 2>/dev/null'
 check ".git/config read-only"     absent in_c 'git config core.fsmonitor /tmp/x 2>/dev/null'
+check ".devcontainer read-only"  absent in_c 'touch "$CRADLE_WORKSPACE/.devcontainer/cradle.json" 2>/dev/null'
 check "config volume mounted"    in_c 'test -f ~/.claude/CLAUDE.md && test -f ~/.claude/cradle-rules/orchestrator.md'
 check "punt tools answer"        in_c 'bd --version && ethos version && punt version && quarry status >/dev/null'
 in_c 'touch "$CRADLE_WORKSPACE/made-in-container"'

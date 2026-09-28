@@ -13,6 +13,8 @@ absent() { ! "$@"; }
 eq() { [[ $1 == "$2" ]]; }
 
 grep -Ev '^\s*(#|$)' "$ROOT/proxy/allowlist.txt" > "$T/allowlist"
+# allowlisted, yet host addresses: must stay refused (nip.io names resolve to the IP they spell)
+printf '%s\n' host.containers.internal .nip.io >> "$T/allowlist"
 podman network create --internal "$NET" >/dev/null
 # the default "podman" network has DNS off, so the proxy would resolve only through
 # the internal network's aardvark, which answers nothing outside: a network of its own
@@ -27,6 +29,9 @@ code() { client "curl -s -o /dev/null -w '%{http_code}' --max-time 15 -x http://
 check "allowed domain via proxy"   eq "$(code https://api.github.com/zen)" 200
 check "other domain refused"       eq "$(code http://example.com/)" 403
 check "IP literal refused"         eq "$(code http://140.82.112.3/)" 403
+check "host name not resolved"     absent eq "$(code http://host.containers.internal/)" 200
+check "host address unreachable"   absent eq "$(code http://169-254-1-2.nip.io/)" 200
+check "private address refused"    eq "$(code http://10-0-0-1.nip.io/)" 403
 check "port 22 refused"            eq "$(code http://github.com:22/)" 403
 code https://example.com/ >/dev/null   # a refused CONNECT, for the log check (curl reports 000)
 check "no direct route"            absent client 'curl -s --max-time 5 --noproxy "*" https://github.com >/dev/null'

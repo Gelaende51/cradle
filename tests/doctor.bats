@@ -81,3 +81,10 @@ setup() {
   run cradle doctor
   [[ "$output" == *"warn"*"cradle-proxy"*"cradle image build"* ]]
 }
+
+@test "a stopped project proxy warns" {
+  git init -q proj && cd proj && mkdir .devcontainer && echo '{}' > .devcontainer/cradle.json
+  stub_script podman 'case "$1 $2" in "info "*) echo true ;; esac; [[ $1 == inspect ]] && echo false; exit 0'
+  run cradle doctor
+  [[ "$output" == *"warn"*"proxy"*"cradle up"* ]]
+}

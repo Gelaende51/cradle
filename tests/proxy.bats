@@ -21,7 +21,8 @@ list_id() { sha256sum < "$XDG_STATE_HOME/cradle/proxy/$(project_key "$P")/allowl
   run allowlist_merge "$P"
   [ "$status" -eq 0 ]
   grep -qx '.example.org' <<< "$output"; grep -qx 'docs.rs' <<< "$output"
-  for bad in '"https://x.org/p"' '"a b.org"' '"x.org\nhttp_access allow all"' '"localhost"'; do
+  for bad in '"https://x.org/p"' '"a b.org"' '"x.org\nhttp_access allow all"' '"localhost"' \
+             '"host.containers.internal"' '"nas.home.arpa"' '"x.local"' '".dns.podman"' '"box.lan"' '"a.localhost"'; do
     set_domains "[$bad]"
     run allowlist_merge "$P"
     [ "$status" -eq 1 ]
@@ -65,7 +66,7 @@ list_id() { sha256sum < "$XDG_STATE_HOME/cradle/proxy/$(project_key "$P")/allowl
 @test "up restarts a stopped proxy" {
   proxy_up "$P"
   id=$(list_id)
-  stub_script podman "[[ \$1 == inspect && \$* == *Labels* ]] && echo $id; [[ \$1 == inspect && \$* == *Running* ]] && echo false; exit 0"
+  stub_script podman "[[ \$1 == inspect && \$* == *Labels* ]] && echo $id; [[ \$1 == inspect && \$* == *Running* ]] && echo false; [[ \$1 == logs ]] && echo 'Accepting HTTP Socket connections'; exit 0"
   : > "$STUB_LOG"
   proxy_up "$P"
   grep -q "podman rm -f cradle-proxy-" "$STUB_LOG"
@@ -85,4 +86,17 @@ list_id() { sha256sum < "$XDG_STATE_HOME/cradle/proxy/$(project_key "$P")/allowl
   [ "$status" -eq 0 ]
   [ "$output" = "2026-09-28T16:00:01 TCP_DENIED CONNECT example.com:443" ]
   grep -q "podman logs cradle-proxy-$(project_key "$P")" "$STUB_LOG"
+}
+
+@test "a proxy that fails to start stops cradle up with its log" {
+  stub_script podman '[[ $1 == inspect && $* == *Running* ]] && echo false; [[ $1 == logs ]] && echo "FATAL: cannot read /etc/squid/allowlist"; exit 0'
+  run proxy_up "$P"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"proxy"*"FATAL: cannot read"* ]]
+}
+
+@test "the allowlist is readable by the proxy's user whatever the umask" {
+  umask 077
+  proxy_up "$P"
+  [[ $(ls -l "$XDG_STATE_HOME/cradle/proxy/$(project_key "$P")/allowlist") == -rw-r--r--* ]]
 }

@@ -85,3 +85,8 @@ dc_json() { tail -n +2 "$P/.devcontainer/devcontainer.json"; }
   [ "$(dc_json | jq -r .containerEnv.https_proxy)" = http://proxy:3128 ]
   [ "$(dc_json | jq -r .containerEnv.NO_PROXY)" = "localhost,127.0.0.1,::1" ]
 }
+
+@test "the container sees .devcontainer read-only" {
+  render_devcontainer "$P"
+  dc_json | jq -e --arg a "--volume=$P/.devcontainer:/home/dev/src/file-path-edit/.devcontainer:ro" '.runArgs | index($a)'
+}

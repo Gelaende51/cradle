@@ -33,9 +33,11 @@ _mask_args() {
 }
 
 # _git_args DIR WORKSPACE: the host runs .git/hooks and reads .git/config (fsmonitor,
-# hooksPath), so the container sees both read-only.
+# hooksPath), and renders its next container from .devcontainer, so the container
+# sees all three read-only.
 _git_args() {
   local dir=$1 ws=$2
+  printf '%s\n' "--volume=$dir/.devcontainer:$ws/.devcontainer:ro"
   [[ -d $dir/.git ]] || return 0
   mkdir -p "$dir/.git/hooks"
   printf '%s\n' "--volume=$dir/.git/hooks:$ws/.git/hooks:ro"
