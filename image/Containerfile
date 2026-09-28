@@ -1,0 +1,46 @@
+# cradle-base: the image every project's dev container starts from.
+FROM mcr.microsoft.com/devcontainers/base:debian
+
+ARG CLAUDE_CODE_VERSION GH_VERSION UV_VERSION PYTHON_VERSION PUNT_KIT_VERSION \
+    QUARRY_VERSION ETHOS_VERSION BEADS_VERSION DOLT_VERSION
+ARG GH_SHA256 UV_SHA256 ETHOS_SHA256 BEADS_SHA256 DOLT_SHA256
+SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
+
+# The devcontainers base ships user vscode (1000:1000); rename it to dev, drop sudo.
+RUN usermod -l dev -d /home/dev -m vscode && groupmod -n dev vscode \
+ && rm -f /etc/sudoers.d/vscode \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends ripgrep fd-find jq shellcheck gettext procps ca-certificates curl git \
+ && ln -s /usr/bin/fdfind /usr/local/bin/fd \
+ && SUDO_FORCE_REMOVE=yes apt-get purge -y sudo && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
+RUN fetch() { curl -fsSL "$1" -o "$2" && echo "$3  $2" | sha256sum -c -; } \
+ && fetch "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" /tmp/gh.tgz "$GH_SHA256" \
+ && tar -xzf /tmp/gh.tgz -C /tmp && install -m755 "/tmp/gh_${GH_VERSION}_linux_amd64/bin/gh" /usr/local/bin/gh \
+ && fetch "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-gnu.tar.gz" /tmp/uv.tgz "$UV_SHA256" \
+ && tar -xzf /tmp/uv.tgz -C /tmp && install -m755 /tmp/uv-x86_64-unknown-linux-gnu/uv /tmp/uv-x86_64-unknown-linux-gnu/uvx /usr/local/bin/ \
+ && fetch "https://github.com/punt-labs/ethos/releases/download/v${ETHOS_VERSION}/ethos-linux-amd64" /tmp/ethos "$ETHOS_SHA256" \
+ && install -m755 /tmp/ethos /usr/local/bin/ethos \
+ && fetch "https://github.com/gastownhall/beads/releases/download/v${BEADS_VERSION}/beads_${BEADS_VERSION}_linux_amd64.tar.gz" /tmp/bd.tgz "$BEADS_SHA256" \
+ && tar -xzf /tmp/bd.tgz -C /tmp && install -m755 /tmp/bd /usr/local/bin/bd \
+ && fetch "https://github.com/dolthub/dolt/releases/download/v${DOLT_VERSION}/dolt-linux-amd64.tar.gz" /tmp/dolt.tgz "$DOLT_SHA256" \
+ && tar -xzf /tmp/dolt.tgz -C /tmp && install -m755 /tmp/dolt-linux-amd64/bin/dolt /usr/local/bin/dolt \
+ && rm -rf /tmp/*
+
+COPY postcreate.sh poststart.sh /usr/local/share/cradle/
+RUN chmod 755 /usr/local/share/cradle/*.sh
+
+USER dev
+ENV PATH=/home/dev/.local/bin:$PATH \
+    UV_TOOL_BIN_DIR=/home/dev/.local/bin \
+    DISABLE_AUTOUPDATER=1
+RUN curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}" \
+ && uv python install "${PYTHON_VERSION}" \
+ && uv tool install --python "${PYTHON_VERSION}" "punt-kit==${PUNT_KIT_VERSION}" \
+ && uv tool install --python "${PYTHON_VERSION}" "punt-quarry==${QUARRY_VERSION}"
+# quarry's embedding model, fetched at build time so runtime needs no Hugging Face access.
+# Uses quarry's own download method (embeddings.py); pinned with QUARRY_VERSION.
+RUN "$HOME/.local/share/uv/tools/punt-quarry/bin/python" -c \
+    'from quarry.embeddings import OnnxEmbeddingBackend as B; print(B.download_model_files())'
+ENV HF_HUB_OFFLINE=1
+WORKDIR /home/dev

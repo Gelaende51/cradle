@@ -24,3 +24,8 @@ here because the host gid (1001) differs from the container user's gid (1000).
 Image pull plus the node feature build took ~19 minutes on the first run
 (network shared with other pulls); cached runs take ~2 minutes. Never wrap
 `devcontainer up` in a short timeout.
+
+## Debian sudo: purge needs SUDO_FORCE_REMOVE=yes
+Removing sudo from the devcontainers Debian image fails ("Refusing to remove
+sudo") because root has no password; `SUDO_FORCE_REMOVE=yes apt-get purge -y sudo`
+is Debian's documented switch.
