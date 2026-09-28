@@ -20,7 +20,7 @@ _dc() {
 _session_token() {
   local r t
   unset GH_TOKEN GITHUB_TOKEN
-  r=$(repo_slug) || return 0
+  r=$(repo_slug "$PWD") || return 0
   t=$(token_lookup "$r") || return 0
   [[ -n $t ]] && export GH_TOKEN=$t
   return 0

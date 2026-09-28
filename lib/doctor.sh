@@ -88,7 +88,7 @@ check_testd() {
 
 check_token() {
   local repo d days
-  repo=$(repo_slug) || { _report ok token "no GitHub origin here; no token needed"; return 0; }
+  repo=$(repo_slug "$PWD") || { _report ok token "no GitHub origin here; no token needed"; return 0; }
   have secret-tool || return 0
   token_lookup "$repo" >/dev/null || { _report warn token "no token for %s; run: cradle token set" "$repo"; return 0; }
   d=$(token_expiry_date "$repo") || { _report warn token "could not read the expiry of the token for %s" "$repo"; return 0; }

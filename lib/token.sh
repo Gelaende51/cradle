@@ -38,7 +38,7 @@ _token_expiry() {
 
 cmd_token() {
   local sub=${1:-} repo=${2:-}
-  [[ -n $repo ]] || repo=$(repo_slug) || die "no GitHub origin remote here; pass owner/repo"
+  [[ -n $repo ]] || repo=$(repo_slug "$PWD") || die "no GitHub origin remote here; pass owner/repo"
   need secret-tool
   case $sub in
     set) _token_set "$repo" ;;
