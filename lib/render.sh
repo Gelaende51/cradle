@@ -16,6 +16,12 @@ project_slug() {
   printf '%s' "${b:-project}"
 }
 
+# project_key DIR: slug plus a hash of the absolute path, so two projects with the
+# same folder name keep apart (volumes, networks, proxies).
+project_key() {
+  printf '%s-%s' "$(project_slug "$1")" "$(printf '%s' "$1" | sha256sum | cut -c1-8)"
+}
+
 # _mask_args DIR WORKSPACE: one podman run argument per existing mask path.
 _mask_args() {
   local dir=$1 ws=$2 m
@@ -66,8 +72,7 @@ render_devcontainer() {
   ws="/home/dev/src/$slug"   # quarry only indexes directories under $HOME
   _check_features "$cfg"
   extra=$({ _mask_args "$dir" "$ws"; _git_args "$dir" "$ws"; } | jq -R . | jq -s .)
-  # the path hash keeps two projects with the same folder name apart
-  vol="cradle-$slug-$(printf '%s' "$dir" | sha256sum | cut -c1-8)-data"
+  vol="cradle-$(project_key "$dir")-data"
   # shellcheck disable=SC2016  # ${localWorkspaceFolder} and ${localEnv:…} are devcontainer variables
   obj=$(jq -n --slurpfile cfg "$cfg" --argjson fmap "$FEATURES_JSON" --argjson masks "$extra" \
       --arg slug "$slug" --arg ws "$ws" --arg vol "$vol" --arg image "localhost/cradle-base:$(cradle_version)" '
