@@ -14,7 +14,10 @@ D=$(. "$ROOT/lib/common.sh"; . "$ROOT/lib/render.sh"; testd_dir "$K")
 cleanup() {
   set +e   # best effort: one failed removal must not skip the rest or turn a pass into a failure
   (cd "$P" 2>/dev/null && { "$C" down >/dev/null 2>&1; "$C" init --detach >/dev/null 2>&1; })
+  # the devcontainer CLI builds a features image per project path; each run has a new path
+  local imgs; imgs=$(podman ps -a --filter "label=devcontainer.local_folder=$P" --format '{{.Image}}')
   podman ps -aq --filter "label=devcontainer.local_folder=$P" | xargs -r podman rm -f >/dev/null 2>&1
+  for i in $imgs; do [[ $i == localhost/vsc-* ]] && podman rmi -f "$i" >/dev/null 2>&1; done
   podman ps -aq --filter "name=cradle-proxy-$K" | xargs -r podman rm -f >/dev/null 2>&1
   podman network ls -q --filter "name=cradle-$K" | xargs -r podman network rm -f >/dev/null 2>&1
   podman volume ls -q --filter "name=cradle-$K" | xargs -r podman volume rm -f >/dev/null 2>&1

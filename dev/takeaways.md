@@ -108,3 +108,11 @@ so it fails in a repo without git identity; the identity file
 ## act reads files from where it runs (final review, 2026-09-28)
 - act 0.2.89 reads `./.actrc` from its working directory, and `.env`, `.secrets`, `.vars` and `.input` relative to `-C`. A commit under test can therefore change act's own flags (`-P label=-self-hosted` runs the job on the host). cradle runs act from an empty directory with `-C <worktree>` and passes `/dev/null` for all four files.
 - A workflow's `.github` tree id alone does not pin its content when the object store is writable by someone else: git does not re-hash loose objects on read. Fetching into a separate repository does re-hash (`unpack-objects`/`index-pack`), so a rewritten object fails the fetch. `git fetch <local path> <sha>` works for any object over protocol v2, reachable or not.
+
+## The devcontainer CLI leaves a features image per project path (2026-09-28)
+- `devcontainer up` builds `localhost/vsc-<folder>-<hash>-features` for every workspace path, and nothing removes it with the container. Integration runs use a fresh `mktemp -d` path each time, so each left ~0.3–4 GB of layers behind; a day of runs filled the last ~34 GB of the disk (the tests then failed with "No space left on device"). The integration cleanups now remove the container's `vsc-*` image; `cradle doctor` warns under 15 GB free.
+- Measuring it: `du` on `~/.local/share/containers` showed 5.3 GB while removing the images freed 34 GB — overlay layers are not what `du -x` sees; use `podman system df` or `podman images`.
+
+## punt tools on first start (pilot, 2026-09-28)
+- beads 1.3.0 `bd init` without flags writes AGENTS.md, CLAUDE.md, .codex/, .cursor/ and .beads/ and **commits them** (21 files) in the attached project. cradle runs `bd init --non-interactive --skip-agents --skip-hooks --setup-exclude`: the data stays in `.beads/`, kept out of git through `.git/info/exclude`, and nothing is committed.
+- ethos and quarry deposit guides under `.punt-labs/` and add `@`-imports to CLAUDE.md and entries to .gitignore; they re-check on every start, so a project either commits those files or sees them as changes each time (cradle commits them).
