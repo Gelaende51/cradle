@@ -29,3 +29,24 @@ Image pull plus the node feature build took ~19 minutes on the first run
 Removing sudo from the devcontainers Debian image fails ("Refusing to remove
 sudo") because root has no password; `SUDO_FORCE_REMOVE=yes apt-get purge -y sudo`
 is Debian's documented switch.
+
+## quarry 3.4.0: only indexes directories under $HOME
+`quarry register` and `quarry enable` refuse any path outside the home
+directory ("directory '/tmp/ws' is outside '/home/dev'"). The Dev Container
+convention `/workspaces/<name>` is therefore unusable with quarry; cradle mounts
+projects at `/home/dev/src/<slug>`. Candidate feature request: an allowlist of
+extra roots (containers, monorepos on other disks).
+
+## quarry 3.4.0 in a container: runs without systemd
+`quarryd` in the foreground answers `quarry status` after ~4 s, needs no TLS
+setup on loopback, and uses ~320 MB RSS idle and ~500 MB while indexing
+(measured under a 3 GB limit). The build-time model download through
+`OnnxEmbeddingBackend.download_model_files()` works with `HF_HUB_OFFLINE=1` at
+runtime.
+
+## ethos 4.19.1: no --version flag
+`ethos version` prints the version; `ethos --version` is an unknown flag.
+
+## cradle-base build: 7.5 min, 2.1 GB peak memory, 3.17 GB image
+A background build started from Claude Code's shell was killed once for low
+memory; running it as `systemd-run --user` detached it from the session.
