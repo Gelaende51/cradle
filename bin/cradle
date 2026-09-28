@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# cradle: containerized development kit. Dispatches to lib/<group>.sh.
+set -euo pipefail
+CRADLE_ROOT=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
+export CRADLE_ROOT
+# shellcheck source=lib/common.sh
+. "$CRADLE_ROOT/lib/common.sh"
+
+usage() {
+  msg "usage: cradle <command> [args]"
+  msg "commands: version help doctor setup image config init token up down claude shell push"
+}
+
+cmd=${1:-help}
+[[ $# -gt 0 ]] && shift
+case $cmd in
+  version) cradle_version ;;
+  help|-h|--help) usage ;;
+  doctor|setup|image|config|init|token) group=$cmd ;;
+  up|down|claude|shell|push) group=session ;;
+  *) usage >&2; exit 2 ;;
+esac
+if [[ -n ${group:-} ]]; then
+  # shellcheck source=/dev/null
+  . "$CRADLE_ROOT/lib/$group.sh"
+  "cmd_$cmd" "$@"
+fi

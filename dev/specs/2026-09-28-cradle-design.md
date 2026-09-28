@@ -71,7 +71,7 @@ Host (EndeavourOS)                        ~/building_stuff/cradle (this repo)
 │
 ├── per project: podman network "cradle-<project>" (internal, no route out)
 │     ├── dev container (devcontainer up)
-│     │     user "dev"; project at /workspaces/<project>
+│     │     user "dev"; project at /home/dev/src/<project> (quarry indexes only under $HOME)
 │     │     Claude Code (pinned) · punt · bd + dolt · quarry + quarryd · ethos · language features
 │     │     volume cradle-claude → /home/dev/.claude (CLAUDE_CONFIG_DIR)
 │     │     volume cradle-<project>-data → quarry index, beads/dolt caches
