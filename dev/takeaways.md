@@ -50,3 +50,20 @@ runtime.
 ## cradle-base build: 7.5 min, 2.1 GB peak memory, 3.17 GB image
 A background build started from Claude Code's shell was killed once for low
 memory; running it as `systemd-run --user` detached it from the session.
+
+## devcontainer CLI 0.89.0 + podman journald events: `up` can hang forever
+The CLI starts `podman events --filter event=start` a few ms *after*
+`podman run` and waits for the start event. With podman's journald events
+backend the subscription is not ready ~0.4 s later when the container starts,
+the event is lost, and `devcontainer up` never returns (reproduced 2/2; the
+spike passed by luck). cradle calls the CLI with
+`CONTAINERS_CONF_OVERRIDE=lib/podman-events.conf` (`events_logger = "file"`).
+Worth an upstream report: subscribe before `run`, or use `--since`.
+
+## ethos 4.19.1: setup --file needs `ethos seed` first; whoami needs git email
+`ethos setup --file` fails with "references personality … not installed; run
+ethos seed first" on a fresh home. `ethos whoami` resolves by git user/email,
+so it fails in a repo without git identity; the identity file
+(`~/.punt-labs/ethos/identities/<handle>.yaml`) is the reliable guard.
+`ethos enable` in a fresh repo wrote no hooks (neither core.hooksPath nor
+.git/hooks) and printed "next: run ethos setup" — open point for Plan 2+.

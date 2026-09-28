@@ -5,7 +5,11 @@
 # shellcheck source=lib/token.sh
 . "$CRADLE_ROOT/lib/token.sh"
 
-_dc() { devcontainer "$1" --docker-path podman --workspace-folder "$PWD" "${@:2}"; }
+# The file events backend avoids a lost start event (see lib/podman-events.conf).
+_dc() {
+  CONTAINERS_CONF_OVERRIDE="$CRADLE_ROOT/lib/podman-events.conf" \
+    devcontainer "$1" --docker-path podman --workspace-folder "$PWD" "${@:2}"
+}
 
 # Export GH_TOKEN for the devcontainer CLI (remoteEnv reads it); silent without one.
 _session_token() {

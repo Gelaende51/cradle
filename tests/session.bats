@@ -48,3 +48,11 @@ setup() {
   [[ "$output" == *"push cancelled"* ]]
   run ! grep -q "^git push" "$STUB_LOG"
 }
+
+@test "devcontainer runs with podman's file events backend" {
+  stub_script devcontainer 'echo "EVENTS_CONF=${CONTAINERS_CONF_OVERRIDE-unset}" >> "$STUB_LOG"'
+  run cradle up
+  [ "$status" -eq 0 ]
+  grep -q "EVENTS_CONF=$CRADLE_ROOT/lib/podman-events.conf" "$STUB_LOG"
+  grep -q 'events_logger = "file"' "$CRADLE_ROOT/lib/podman-events.conf"
+}
