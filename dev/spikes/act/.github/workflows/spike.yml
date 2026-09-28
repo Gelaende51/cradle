@@ -1,0 +1,10 @@
+name: spike
+on: push
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "kernel: $(uname -r)"; id
+          if [ -S /var/run/docker.sock ]; then echo SOCKET; else echo NOSOCKET; fi
+          if curl -sS -m 5 https://example.com >/dev/null 2>&1; then echo NET; else echo NONET; fi
