@@ -254,7 +254,7 @@ Expected: FAIL. Then add `.devcontainer/devcontainer.json` to `GITIGNORE_BLOCK` 
   grep -q 'docs/i18n/README.de.md' "$CRADLE_ROOT/README.md"
   grep -q '../../README.md' "$CRADLE_ROOT/docs/i18n/README.de.md"
   grep -q '^- \*\*Usage\*\* — ' "$CRADLE_ROOT/README.md"
-  run grep -rn '/home/niemand' "$CRADLE_ROOT/README.md" "$CRADLE_ROOT/docs"
+  run grep -rn '~' "$CRADLE_ROOT/README.md" "$CRADLE_ROOT/docs"
   [ "$status" -eq 1 ]
 }
 ```
@@ -332,7 +332,7 @@ Run `node dev/usage-stats.mjs` — Expected: two plausible lines (millions of ca
 ```bash
 git ls-files | grep -E '(^|/)\.personal/|\.env$|credentials' && echo "FOUND tracked sensitive file"
 git log -p --all | grep -nE 'johannes|krischke|web\.de|ghp_[A-Za-z0-9]{20,}|github_pat_|sk-ant-|BEGIN [A-Z ]*PRIVATE KEY' && echo "FOUND secret-like text"
-git grep -n '/home/niemand' -- ':!dev/plans' ':!dev/takeaways.md' && echo "FOUND host path"
+git grep -n '~' -- ':!dev/plans' ':!dev/takeaways.md' && echo "FOUND host path"
 git log --format='%an <%ae>%n%cn <%ce>' | sort -u
 ```
 Expected: no "FOUND" lines; authors only `Vault51 <Gelaende51@users.noreply.github.com>`. Host paths in plans/takeaways are allowed only as examples of the operator's layout; if any appear elsewhere, replace them with `~` or `$HOME` and commit.

@@ -45,7 +45,7 @@ Plan 2 closed egress: the dev container reaches only allowlisted domains through
 
 ## Global Constraints
 
-- Host: EndeavourOS, podman 6.1.2 rootless, user `niemand` uid 1000 / gid 1001, 7 GB RAM.
+- Host: EndeavourOS, podman 6.1.2 rootless, user `$USER` uid 1000 / gid 1001, 7 GB RAM.
 - All scripts: `#!/usr/bin/env bash`, `set -euo pipefail`, shellcheck-clean (`shellcheck -x`).
 - Every user-facing string goes through `msg`, `warn` or `die` in `lib/common.sh` (gettext domain `cradle`, catalogue in `locale/`).
 - Pinned versions live only in `image/versions.env`. Nothing else hard-codes a version.
@@ -108,14 +108,14 @@ The executor can't run sudo. Hand these to the operator and wait until they conf
 - [ ] **Step 1: Ask the operator to run**
 
 ```bash
-sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 niemand
+sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 $USER
 podman system migrate
 sudo pacman -S --needed bats shellcheck act
 ```
 
 - [ ] **Step 2: Verify**
 
-Run: `grep '^niemand:' /etc/subuid /etc/subgid; bats --version; shellcheck --version | head -2; act --version`
+Run: `grep '^$USER:' /etc/subuid /etc/subgid; bats --version; shellcheck --version | head -2; act --version`
 Expected: one line each in subuid and subgid; `Bats 1.14.0`; shellcheck `0.11.0`; `act version 0.2.89`.
 
 ---
@@ -397,7 +397,7 @@ Expected:
 - `uid=1000(vscode) gid=1000(vscode)`, and a Node version is printed.
 - `CapEff: 0000000000000000`
 - `memory.max` is `3221225472`. If it prints `max`, memory delegation is missing; record that.
-- On the host, the file is owned by `niemand:niemand` or `niemand:<gid 1001 group>`, not by a subuid number.
+- On the host, the file is owned by `$USER:$USER` or `$USER:<gid 1001 group>`, not by a subuid number.
 - No podman socket inside the container.
 - The labels include `devcontainer.local_folder=<this dir>`.
 
