@@ -54,10 +54,8 @@ setup() {
 }
 
 @test "stale config volume warns" {
-  export CRADLE_CONFIG_DIR="$BATS_TEST_TMPDIR/kitcfg"; mkdir -p "$CRADLE_CONFIG_DIR"
-  echo new > "$CRADLE_CONFIG_DIR/CLAUDE.md"
-  mkdir -p "$BATS_TEST_TMPDIR/vol"; echo old > "$BATS_TEST_TMPDIR/vol/CLAUDE.md"
-  stub_script podman 'case "$1 $2" in "info "*) echo true ;; "volume inspect") echo '"$BATS_TEST_TMPDIR/vol"' ;; esac; exit 0'
+  # the check container (lib/volume-sync.sh check) reports a difference
+  stub_script podman 'case "$1 $2" in "info "*) echo true ;; "run "*) exit 1 ;; esac; exit 0'
   run cradle doctor
   [[ "$output" == *"warn"*"config"*"cradle config sync"* ]]
 }
