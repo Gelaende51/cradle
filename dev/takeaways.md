@@ -67,3 +67,12 @@ so it fails in a repo without git identity; the identity file
 (`~/.punt-labs/ethos/identities/<handle>.yaml`) is the reliable guard.
 `ethos enable` in a fresh repo wrote no hooks (neither core.hooksPath nor
 .git/hooks) and printed "next: run ethos setup" — open point for Plan 2+.
+
+## podman 6 `ps --format` cannot index labels
+- `podman ps --format '{{index .Labels "x"}}'` fails with "cannot index slice/array with type string" on podman 6.1.2; `podman inspect --format '{{index .Config.Labels "x"}}' <id>` works. cradle reads its `cradle.render` label that way.
+
+## devcontainer exec puts remoteEnv values on podman's command line
+- `devcontainer exec` runs `podman exec -e GH_TOKEN=<value> …`, so the token is visible in the host's process list. cradle runs `claude`/`shell` through `podman exec -e GH_TOKEN` (name only, value from the environment) instead. Candidate issue for devcontainers/cli: pass remoteEnv through the environment.
+
+## Read-only .git/hooks and .git/config inside the container
+- Bind-mounting both read-only over the workspace bind mount works on rootless podman; git's lockfile rename onto the mounted config fails, so `git config` in the container is refused. `bd init` (beads 1.3.0) and `ethos enable` still succeed with it.

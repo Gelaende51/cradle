@@ -16,7 +16,8 @@ dc_json() { tail -n +2 "$P/.devcontainer/devcontainer.json"; }
   [ "$(dc_json | jq -r .image)" = "localhost/cradle-base:$(cat "$CRADLE_ROOT/VERSION")" ]
   dc_json | jq -e '.features["ghcr.io/devcontainers/features/node:1"].version == "lts"'
   [ "$(dc_json | jq -r .workspaceFolder)" = "/home/dev/src/file-path-edit" ]
-  dc_json | jq -e '.mounts | index("source=cradle-file-path-edit-data,target=/home/dev/.local/share/cradle,type=volume")'
+  h=$(printf '%s' "$P" | sha256sum | cut -c1-8)
+  dc_json | jq -e --arg v "source=cradle-file-path-edit-$h-data,target=/home/dev/.local/share/cradle,type=volume" '.mounts | index($v)'
   dc_json | jq -e '.runArgs | index("--memory=3g") and index("--cap-drop=ALL")'
   [ "$(dc_json | jq -r .remoteEnv.GH_TOKEN)" = '${localEnv:GH_TOKEN}' ]
 }
@@ -44,4 +45,34 @@ dc_json() { tail -n +2 "$P/.devcontainer/devcontainer.json"; }
   run render_devcontainer "$P"
   [ "$status" -eq 1 ]
   [[ "$output" == *"cradle init"* ]]
+}
+
+@test "mounts the host's .git/hooks and .git/config read-only" {
+  git -C "$P" init -q; rm -rf "$P/.git/hooks"
+  render_devcontainer "$P"
+  [ -d "$P/.git/hooks" ]
+  dc_json | jq -e --arg a "--volume=$P/.git/hooks:/home/dev/src/file-path-edit/.git/hooks:ro" '.runArgs | index($a)'
+  dc_json | jq -e --arg a "--volume=$P/.git/config:/home/dev/src/file-path-edit/.git/config:ro" '.runArgs | index($a)'
+}
+
+@test "features outside the allowlist are refused" {
+  jq '.features = {"ghcr.io/devcontainers/features/docker-in-docker:2": {}}' "$P/.devcontainer/cradle.json" > "$P/c" && mv "$P/c" "$P/.devcontainer/cradle.json"
+  run render_devcontainer "$P"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"docker-in-docker"*"allowlist"* ]]
+}
+
+@test "an allowlisted feature takes options from cradle.json" {
+  jq '.features = {"ghcr.io/devcontainers/features/node:1": {"version": "22"}}' "$P/.devcontainer/cradle.json" > "$P/c" && mv "$P/c" "$P/.devcontainer/cradle.json"
+  render_devcontainer "$P"
+  dc_json | jq -e '.features["ghcr.io/devcontainers/features/node:1"].version == "22"'
+}
+
+@test "the render id is stable and changes with the configuration" {
+  render_devcontainer "$P"; a=$(render_id "$P")
+  render_devcontainer "$P"; [ "$(render_id "$P")" = "$a" ]
+  [ ${#a} -eq 64 ]
+  dc_json | jq -e --arg a "--label=cradle.render=$a" '.runArgs | index($a)'
+  jq '.memory = "4g"' "$P/.devcontainer/cradle.json" > "$P/c" && mv "$P/c" "$P/.devcontainer/cradle.json"
+  render_devcontainer "$P"; [ "$(render_id "$P")" != "$a" ]
 }
