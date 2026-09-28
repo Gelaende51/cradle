@@ -45,6 +45,7 @@ check ".git/config read-only"     absent in_c 'git config core.fsmonitor /tmp/x 
 check ".devcontainer read-only"  absent in_c 'touch "$CRADLE_WORKSPACE/.devcontainer/cradle.json" 2>/dev/null'
 check "config volume mounted"    in_c 'test -f ~/.claude/CLAUDE.md && test -f ~/.claude/cradle-rules/orchestrator.md'
 check "punt tools answer"        in_c 'bd --version && ethos version && punt version && quarry status >/dev/null'
+check "tier-1 tools"            in_c 'bats --version && make --version >/dev/null && shellcheck --version >/dev/null && python3 -c "import yaml"'
 in_c 'touch "$CRADLE_WORKSPACE/made-in-container"'
 check "bind-mount ownership"     eq "$(stat -c %U "$P/made-in-container")" "$(id -un)"
 

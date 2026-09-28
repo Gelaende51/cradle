@@ -1,2 +1,7 @@
 .cradle/
 *.tmp
+# >>> cradle
+.cradle/
+.devcontainer/.cradle-hash
+.devcontainer/devcontainer.json
+# <<< cradle

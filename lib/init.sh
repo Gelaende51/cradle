@@ -10,6 +10,7 @@
 GITIGNORE_BLOCK='# >>> cradle
 .cradle/
 .devcontainer/.cradle-hash
+.devcontainer/devcontainer.json
 # <<< cradle'
 
 detect_languages() {

@@ -35,3 +35,8 @@ setup() {
   [ "$status" -eq 1 ]
   [[ "$output" == *"not a git repository"* ]]
 }
+
+@test "the gitignore block covers the rendered devcontainer.json" {
+  cradle init
+  grep -qx '.devcontainer/devcontainer.json' .gitignore
+}
