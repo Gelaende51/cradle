@@ -86,3 +86,9 @@ so it fails in a repo without git identity; the identity file
 - Runs as `USER squid` with `--cap-drop=ALL --read-only` given `pid_filename none`, logs to stdio, no cache_dir.
 - It ignores SIGTERM for `shutdown_lifetime` (default 30 s), longer than podman's 10 s stop timeout; `shutdown_lifetime 0 seconds` fixes it.
 - `dstdomain -n` refuses IP literals (no reverse lookup); a refused CONNECT makes curl report `%{http_code}` 000, so tests check refusals over plain HTTP (403).
+
+## bd init against a read-only .git/config
+- beads 1.3.0 `bd init` tries `git config core.hooksPath .beads/hooks`; with `.git/config` mounted read-only it prints "⚠ Failed to install git hooks … Device or resource busy" and carries on (exit 0). Intended: cradle's hooks live in the data volume via `GIT_CONFIG_*`, and the host's git config stays untouched. beads' own hooks are therefore not active in cradle containers.
+
+## Egress through the proxy (integration, 2026-09-28)
+- curl, and Claude's API endpoint, work through `HTTPS_PROXY=http://proxy:3128`; direct connections and outside DNS fail; `cradle net log` shows the refused `example.com:443`.

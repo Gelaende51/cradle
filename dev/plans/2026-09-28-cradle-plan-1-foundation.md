@@ -23,8 +23,7 @@ here are spikes whose results decide their shape.
 | 3 Tier-2 tests | cradle-testd, request and validation, act runner (or the fallback from Spike B), `cradle test`, `cradle approve-workflows`, `cradle-request`, `init --detach`, CI template and `.actrc` from `init`, doctor checks for testd | §3.6, §3.2 (CI template) |
 | 4 Ship | README (+ German), docs, gettext German catalogue and check, GitHub repo `Gelaende51/cradle` (confirmed first), cradle's own Actions CI, usage scripts reading the volume, pilot (develop cradle in cradle) | §3.3 (usage scripts), §6 (CI and pilot), §7 |
 
-Until Plan 2 lands, the dev container has **open egress**. Don't use it on
-untrusted repositories before then.
+Plan 2 closed egress: the dev container reaches only allowlisted domains through its proxy.
 
 ## Clarifications of the spec made while planning
 
