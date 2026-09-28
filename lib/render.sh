@@ -25,6 +25,14 @@ project_key() {
 # testd_dir KEY: the host state of a project's tier-2 test queue.
 testd_dir() { printf '%s' "${XDG_STATE_HOME:-$HOME/.local/state}/cradle/testd/$1"; }
 
+# _testd_args TESTD_DIR: the tier-2 request maildir (rw), the results (ro) and
+# the request script. Both live outside the workspace, see lib/testd.sh.
+_testd_args() {
+  printf '%s\n' "--volume=$1/req:/home/dev/.cradle/requests" \
+    "--volume=$1/results:/home/dev/.cradle/results:ro" \
+    "--volume=$CRADLE_ROOT/bin/cradle-request:/usr/local/bin/cradle-request:ro"
+}
+
 # _mask_args DIR WORKSPACE: one podman run argument per existing mask path.
 _mask_args() {
   local dir=$1 ws=$2 m
@@ -64,7 +72,7 @@ render_id() {
 }
 
 render_devcontainer() {
-  local dir=$1 cfg out hashf slug ws extra vol obj id
+  local dir=$1 cfg out hashf slug ws extra vol obj id td
   cfg="$dir/.devcontainer/cradle.json"
   out="$dir/.devcontainer/devcontainer.json"
   hashf="$dir/.devcontainer/.cradle-hash"
@@ -76,7 +84,8 @@ render_devcontainer() {
   slug=$(project_slug "$dir")
   ws="/home/dev/src/$slug"   # quarry only indexes directories under $HOME
   _check_features "$cfg"
-  extra=$({ _mask_args "$dir" "$ws"; _git_args "$dir" "$ws"; } | jq -R . | jq -s .)
+  td=$(testd_dir "$(project_key "$dir")"); mkdir -p "$td/req/tmp" "$td/req/new" "$td/results"
+  extra=$({ _mask_args "$dir" "$ws"; _git_args "$dir" "$ws"; _testd_args "$td"; } | jq -R . | jq -s .)
   vol="cradle-$(project_key "$dir")-data"
   # shellcheck disable=SC2016  # ${localWorkspaceFolder} and ${localEnv:…} are devcontainer variables
   obj=$(jq -n --slurpfile cfg "$cfg" --argjson fmap "$FEATURES_JSON" --argjson masks "$extra" \
@@ -106,7 +115,9 @@ render_devcontainer() {
           NO_PROXY: "localhost,127.0.0.1,::1", no_proxy: "localhost,127.0.0.1,::1",
           GIT_CONFIG_COUNT: "1",
           GIT_CONFIG_KEY_0: "core.hooksPath",
-          GIT_CONFIG_VALUE_0: "/home/dev/.local/share/cradle/hooks"
+          GIT_CONFIG_VALUE_0: "/home/dev/.local/share/cradle/hooks",
+          CRADLE_REQUESTS: "/home/dev/.cradle/requests",
+          CRADLE_RESULTS: "/home/dev/.cradle/results"
         },
         remoteEnv: {GH_TOKEN: "${localEnv:GH_TOKEN}"},
         postCreateCommand: "/usr/local/share/cradle/postcreate.sh",

@@ -181,3 +181,22 @@ testd_run() {
     ref=""; job=""
   done
 }
+
+_unit_dir() { printf '%s' "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"; }
+
+testd_install() {
+  local u; u=$(_unit_dir); mkdir -p "$u"
+  cp "$CRADLE_ROOT/testd/cradle-testd@.path" "$u/"
+  sed "s|@CRADLE_ROOT@|$CRADLE_ROOT|g" "$CRADLE_ROOT/testd/cradle-testd@.service" > "$u/cradle-testd@.service"
+  systemctl --user daemon-reload
+  systemctl --user enable --now "cradle-testd@$1.path" >/dev/null
+}
+
+testd_uninstall() { systemctl --user disable --now "cradle-testd@$1.path" >/dev/null 2>&1 || true; }
+
+# cmd_test JOB [REF]: host-side request through the same script the container uses.
+cmd_test() {
+  local d; d=$(testd_dir "$(project_key "$PWD")")
+  [[ -d $d/req/new ]] || die "this project is not attached; run: cradle init"
+  CRADLE_REQUESTS="$d/req" CRADLE_RESULTS="$d/results" "$CRADLE_ROOT/bin/cradle-request" "$@"
+}

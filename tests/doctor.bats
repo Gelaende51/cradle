@@ -95,3 +95,13 @@ setup() {
   [ "$status" -eq 1 ]
   [[ "$output" == *"fail"*"python-yaml"*"pacman"* ]]
 }
+
+@test "an attached project without an active tier-2 runner warns" {
+  mkdir -p .devcontainer; echo '{}' > .devcontainer/cradle.json
+  stub_script systemctl '[[ "$*" == *is-active* ]] && exit 3; exit 0'
+  run cradle doctor
+  [[ "$output" == *"warn"*"testd"*"cradle init --force"* ]]
+  stub systemctl
+  run cradle doctor
+  [[ "$output" == *"ok"*"testd"* ]]
+}

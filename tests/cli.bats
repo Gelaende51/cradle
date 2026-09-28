@@ -15,7 +15,7 @@ setup() { load test_helper; setup_isolated_path; }
 @test "help lists every command" {
   run cradle help
   [ "$status" -eq 0 ]
-  for c in doctor setup image config init token up down claude shell push net approve-workflows; do
+  for c in doctor setup image config init token up down claude shell push net test approve-workflows; do
     [[ "$output" == *"$c"* ]]
   done
 }

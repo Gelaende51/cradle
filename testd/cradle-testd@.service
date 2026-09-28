@@ -1,0 +1,8 @@
+[Unit]
+Description=cradle tier-2 test runner for %i
+
+[Service]
+Type=oneshot
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin
+Environment=DOCKER_HOST=unix://%t/podman/podman.sock
+ExecStart=@CRADLE_ROOT@/bin/cradle-testd %i

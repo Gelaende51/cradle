@@ -78,6 +78,14 @@ check_proxy() {
   else _report warn proxy "%s is not running; run: cradle up" "$name"; fi
 }
 
+check_testd() {
+  have systemctl || return 0
+  [[ -f .devcontainer/cradle.json ]] || return 0
+  local key; key=$(project_key "$PWD")
+  if systemctl --user is-active --quiet "cradle-testd@$key.path"; then _report ok testd "tier-2 runner is waiting for requests"
+  else _report warn testd "tier-2 runner not active; run: cradle init --force"; fi
+}
+
 check_token() {
   local repo d days
   repo=$(repo_slug) || { _report ok token "no GitHub origin here; no token needed"; return 0; }
@@ -130,6 +138,7 @@ cmd_doctor() {
   check_image
   check_config
   check_proxy
+  check_testd
   check_token
   check_disk
   check_ram

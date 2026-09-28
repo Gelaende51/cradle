@@ -8,7 +8,8 @@ export CRADLE_ROOT
 
 usage() {
   msg "usage: cradle <command> [args]"
-  msg "commands: version help doctor setup image config init token up down claude shell push net approve-workflows"
+  msg "commands: version help doctor setup image config init token up down claude shell push net test approve-workflows"
+  msg "  test JOB [REF]   run a tier-2 job on the host"
 }
 
 cmd=${1:-help}
@@ -19,6 +20,7 @@ case $cmd in
   doctor|setup|image|config|init|token) group=$cmd ;;
   up|down|claude|shell|push) group=session ;;
   net) group=proxy ;;
+  test) group=testd ;;
   approve-workflows) group=testd; cmd=approve_workflows ;;
   *) usage >&2; exit 2 ;;
 esac

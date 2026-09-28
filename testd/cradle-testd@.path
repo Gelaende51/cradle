@@ -1,0 +1,9 @@
+[Unit]
+Description=cradle tier-2 test requests for %i
+
+[Path]
+# any entry in new/ (cradle-request renames finished files into it from tmp/)
+DirectoryNotEmpty=%h/.local/state/cradle/testd/%i/req/new
+
+[Install]
+WantedBy=default.target

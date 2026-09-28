@@ -21,6 +21,8 @@ setup_isolated_path() {
   : > "$STUB_LOG"
   export PATH="$STUB_BIN:$SYS_BIN"
   export CRADLE_PROXY_WAIT=1   # one readiness probe per proxy start
+  # never touch the real state, unit or cache directories
+  export XDG_STATE_HOME="$BATS_TEST_TMPDIR/state" XDG_CONFIG_HOME="$BATS_TEST_TMPDIR/config" XDG_CACHE_HOME="$BATS_TEST_TMPDIR/cache"
 }
 
 # stub NAME [EXIT_CODE] [STDOUT]: a fake command that logs "NAME args".

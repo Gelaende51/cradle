@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# cradle-request JOB [REF]: ask the host to run tier-2 job JOB on a commit
+# (default HEAD) and wait for the result. Exit 0 only when the job passed.
+set -euo pipefail
+job=${1:?usage: cradle-request JOB [REF]}
+q=${CRADLE_REQUESTS:-$HOME/.cradle/requests}; r=${CRADLE_RESULTS:-$HOME/.cradle/results}
+ref=$(git rev-parse --verify "${2:-HEAD}^{commit}")
+[[ -z $(git status --porcelain --untracked-files=no) ]] \
+  || echo "cradle-request: uncommitted changes are not part of the run; testing ${ref:0:12}" >&2
+id="$(date +%Y%m%d-%H%M%S)-$$"
+jq -n --arg ref "$ref" --arg job "$job" '{ref: $ref, job: $job}' > "$q/tmp/$id.json"
+mv "$q/tmp/$id.json" "$q/new/$id.json"
+echo "cradle-request: $job at ${ref:0:12} queued as $id" >&2
+for ((i = 0; i < ${CRADLE_REQUEST_WAIT:-1500}; i++)); do   # 2 s steps, 50 minutes
+  [[ -f $r/$id/status.json ]] && break
+  sleep 2
+done
+[[ -f $r/$id/status.json ]] || { echo "cradle-request: no result after waiting; is the host's cradle-testd running?" >&2; exit 3; }
+jq -r '"\(.status): \(.reason)"' "$r/$id/status.json"
+echo "log: $r/$id/act.log" >&2
+[[ $(jq -r .status "$r/$id/status.json") == passed ]]

@@ -1,7 +1,7 @@
 setup() {
   load test_helper; setup_isolated_path
   P="$BATS_TEST_TMPDIR/my proj"; mkdir -p "$P"; git -C "$P" init -q; cd "$P"
-  "$CRADLE_ROOT/bin/cradle" init >/dev/null
+  stub systemctl; "$CRADLE_ROOT/bin/cradle" init >/dev/null; : > "$STUB_LOG"
   export XDG_STATE_HOME="$BATS_TEST_TMPDIR/state"
   stub podman
   stub_script devcontainer 'echo "GH_TOKEN=${GH_TOKEN-unset}" >> "$STUB_LOG"'

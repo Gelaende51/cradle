@@ -2,6 +2,7 @@ setup() {
   load test_helper; setup_isolated_path
   P="$BATS_TEST_TMPDIR/proj"; mkdir -p "$P"; git -C "$P" init -q
   cd "$P"
+  stub systemctl; stub podman
 }
 
 @test "detects node and go and writes cradle.json" {
