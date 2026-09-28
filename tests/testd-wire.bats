@@ -60,3 +60,7 @@ setup() {
 @test "the path unit watches req/new for any entry" {
   grep -qx 'DirectoryNotEmpty=%h/.local/state/cradle/testd/%i/req/new' "$CRADLE_ROOT/testd/cradle-testd@.path"
 }
+
+@test "the runner has no start rate limit, so a burst of requests cannot stop the path unit" {
+  grep -qx 'StartLimitIntervalSec=0' "$CRADLE_ROOT/testd/cradle-testd@.service"
+}

@@ -7,9 +7,9 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 C="$ROOT/bin/cradle"
 T=$(mktemp -d); P="$T/fixture proj"
 cleanup() {
+  set +e   # best effort: one failed removal must not skip the rest or turn a pass into a failure
   (cd "$P" 2>/dev/null && "$C" down >/dev/null 2>&1)
-  # shellcheck disable=SC2046  # one id per word
-  podman rm -f $(podman ps -aq --filter "label=devcontainer.local_folder=$P") >/dev/null 2>&1
+  podman ps -aq --filter "label=devcontainer.local_folder=$P" | xargs -r podman rm -f >/dev/null 2>&1
   podman ps -aq --filter name=cradle-proxy-fixture-proj- | xargs -r podman rm -f >/dev/null 2>&1
   podman network ls -q --filter name=cradle-fixture-proj- | xargs -r podman network rm -f >/dev/null 2>&1
   podman volume ls -q --filter name=cradle-fixture-proj- | xargs -r podman volume rm -f >/dev/null 2>&1

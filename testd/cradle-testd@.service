@@ -1,5 +1,7 @@
 [Unit]
 Description=cradle tier-2 test runner for %i
+# every request starts it; a burst of them must not trip the default 5-starts-in-10s limit
+StartLimitIntervalSec=0
 
 [Service]
 Type=oneshot

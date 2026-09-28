@@ -96,3 +96,11 @@ so it fails in a repo without git identity; the identity file
 ## squid and local destinations
 - squid reads the container's `/etc/hosts`, where podman maps `host.containers.internal` to the host (169.254.1.2 via pasta); `hosts_file none` stops that (the name then fails to resolve: 503).
 - `acl local dst <private ranges>` + `http_access deny local` refuses public names that resolve to private addresses (checked with `10-0-0-1.nip.io` → 403). On this host, DNS answers for names that resolve to 127.x or 169.254.x come back empty (resolver rebind protection), so those fail even earlier.
+
+## Tier-2 runs through a systemd path unit (integration, 2026-09-28)
+- A `DirectoryNotEmpty=` path unit starts its oneshot service once per request; systemd's default start limit (5 starts in 10 s) is hit by a quick burst, the service fails with `start-limit-hit` and the path unit with `unit-start-limit-hit` — it then watches nothing until restarted. `StartLimitIntervalSec=0` in the service's `[Unit]` fixes it.
+- act 0.2.89 runs a job from a `git worktree` checkout (`.git` is a file there) of a repository with no remote; `uses: actions/checkout@v4` works under `--network none` (act copies the local tree instead of fetching).
+- `--container-daemon-socket -` plus `--network none` on rootless podman: the job sees no socket and no network, and `🏁  Job succeeded` is still logged.
+
+## Shell: EXIT traps inherit set -e
+- An EXIT trap runs under the script's `set -e`: `podman rm -f` with no ids exits 125 and aborts the rest of the cleanup, and that status becomes the script's exit code — a passing test reported failure and left state behind. Cleanup traps start with `set +e` and feed ids through `xargs -r`.
