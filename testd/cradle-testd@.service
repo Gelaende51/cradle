@@ -1,7 +1,9 @@
 [Unit]
 Description=cradle tier-2 test runner for %i
-# every request starts it; a burst of them must not trip the default 5-starts-in-10s limit
-StartLimitIntervalSec=0
+# every request can start it: a burst must not trip the default 5 starts in
+# 10 s (the path unit would then stop for good), a crash loop still stops
+StartLimitIntervalSec=60
+StartLimitBurst=30
 
 [Service]
 Type=oneshot

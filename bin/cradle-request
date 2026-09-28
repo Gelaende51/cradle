@@ -7,9 +7,14 @@ q=${CRADLE_REQUESTS:-$HOME/.cradle/requests}; r=${CRADLE_RESULTS:-$HOME/.cradle/
 ref=$(git rev-parse --verify "${2:-HEAD}^{commit}")
 [[ -z $(git status --porcelain --untracked-files=no) ]] \
   || echo "cradle-request: uncommitted changes are not part of the run; testing ${ref:0:12}" >&2
-id="$(date +%Y%m%d-%H%M%S)-$$"
+# unpredictable, so nobody else can queue a request under the id this one waits on
+id="$(date +%Y%m%d-%H%M%S)-$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')"
 jq -n --arg ref "$ref" --arg job "$job" '{ref: $ref, job: $job}' > "$q/tmp/$id.json"
-mv "$q/tmp/$id.json" "$q/new/$id.json"
+tries=0
+until mv "$q/tmp/$id.json" "$q/new/$id.json" 2>/dev/null; do   # new/ is briefly absent while the host takes a batch
+  (( ++tries < 25 )) || { echo "cradle-request: cannot queue into $q/new" >&2; exit 3; }
+  sleep 0.2
+done
 echo "cradle-request: $job at ${ref:0:12} queued as $id" >&2
 for ((i = 0; i < ${CRADLE_REQUEST_WAIT:-1500}; i++)); do   # 2 s steps, 50 minutes
   [[ -f $r/$id/status.json ]] && break

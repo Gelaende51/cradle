@@ -61,6 +61,9 @@ jobs:
     steps:
       - run: "true"
 YML
+# a hostile .actrc in the commit: were act to read it, the job would run on the
+# host (where curl reaches example.com) and fail
+echo '-P ubuntu-latest=-self-hosted' > "$P/.actrc"
 git -C "$P" init -q; git -C "$P" add -A; git -C "$P" -c user.name=t -c user.email=t@localhost commit -q -m init
 cd "$P"
 

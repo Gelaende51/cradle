@@ -98,9 +98,13 @@ so it fails in a repo without git identity; the identity file
 - `acl local dst <private ranges>` + `http_access deny local` refuses public names that resolve to private addresses (checked with `10-0-0-1.nip.io` → 403). On this host, DNS answers for names that resolve to 127.x or 169.254.x come back empty (resolver rebind protection), so those fail even earlier.
 
 ## Tier-2 runs through a systemd path unit (integration, 2026-09-28)
-- A `DirectoryNotEmpty=` path unit starts its oneshot service once per request; systemd's default start limit (5 starts in 10 s) is hit by a quick burst, the service fails with `start-limit-hit` and the path unit with `unit-start-limit-hit` — it then watches nothing until restarted. `StartLimitIntervalSec=0` in the service's `[Unit]` fixes it.
+- A `DirectoryNotEmpty=` path unit starts its oneshot service once per request; systemd's default start limit (5 starts in 10 s) is hit by a quick burst, the service fails with `start-limit-hit` and the path unit with `unit-start-limit-hit` — it then watches nothing until restarted. cradle raises the limit (`StartLimitIntervalSec=60`, `StartLimitBurst=30`) rather than removing it, so a crash loop still stops.
 - act 0.2.89 runs a job from a `git worktree` checkout (`.git` is a file there) of a repository with no remote; `uses: actions/checkout@v4` works under `--network none` (act copies the local tree instead of fetching).
 - `--container-daemon-socket -` plus `--network none` on rootless podman: the job sees no socket and no network, and `🏁  Job succeeded` is still logged.
 
 ## Shell: EXIT traps inherit set -e
 - An EXIT trap runs under the script's `set -e`: `podman rm -f` with no ids exits 125 and aborts the rest of the cleanup, and that status becomes the script's exit code — a passing test reported failure and left state behind. Cleanup traps start with `set +e` and feed ids through `xargs -r`.
+
+## act reads files from where it runs (final review, 2026-09-28)
+- act 0.2.89 reads `./.actrc` from its working directory, and `.env`, `.secrets`, `.vars` and `.input` relative to `-C`. A commit under test can therefore change act's own flags (`-P label=-self-hosted` runs the job on the host). cradle runs act from an empty directory with `-C <worktree>` and passes `/dev/null` for all four files.
+- A workflow's `.github` tree id alone does not pin its content when the object store is writable by someone else: git does not re-hash loose objects on read. Fetching into a separate repository does re-hash (`unpack-objects`/`index-pack`), so a rewritten object fails the fetch. `git fetch <local path> <sha>` works for any object over protocol v2, reachable or not.

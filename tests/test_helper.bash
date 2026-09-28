@@ -6,7 +6,7 @@ CRADLE_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 export CRADLE_ROOT
 BASE_TOOLS=(bash env cat grep sed awk jq mkdir rm cp mv ls dirname basename
   readlink realpath tr cut sort head tail wc mktemp date find cmp touch chmod
-  id gettext git sha256sum xargs tee sleep ls ln stat python3 flock timeout)
+  id gettext git sha256sum xargs tee sleep ls ln stat python3 flock timeout od)
 
 setup_isolated_path() {
   STUB_BIN="$BATS_TEST_TMPDIR/stubs"

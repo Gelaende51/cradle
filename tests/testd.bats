@@ -138,3 +138,86 @@ jobs:
   [ "$status" -eq 0 ]
   grep -q "^$(github_tree "$P" "$s") $s$" "$D/approved"
 }
+
+@test "a directory the container made read-only does not stop the intake" {
+  mkdir -p "$D/req/new/x.json"; echo a > "$D/req/new/x.json/f"; chmod 0500 "$D/req/new/x.json"
+  run request_take "$K"
+  [ "$status" -eq 0 ]; [ -z "$output" ]
+  [ "$(ls "$D/results" | grep -c '^invalid-')" -eq 1 ]
+  [ -d "$D/req/new" ] && [ ! -L "$D/req/new" ] && [ -z "$(ls -A "$D/req/new")" ]
+}
+
+@test "new/ is a real directory again after a planted symlink is taken away" {
+  mkdir "$BATS_TEST_TMPDIR/elsewhere"; rm -r "$D/req/new"; ln -s "$BATS_TEST_TMPDIR/elsewhere" "$D/req/new"
+  request_take "$K"
+  [ -d "$D/req/new" ] && [ ! -L "$D/req/new" ]
+  [ -d "$BATS_TEST_TMPDIR/elsewhere" ]
+}
+
+@test "a workflow file that is a symlink is refused" {
+  mkdir -p "$P/tools"; printf 'on: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n    container: {image: alpine, volumes: ["/:/host"]}\n    steps:\n      - run: "true"\n' > "$P/tools/wf.yml"
+  mkdir -p "$P/.github/workflows"; ln -s ../../tools/wf.yml "$P/.github/workflows/ci.yml"
+  git -C "$P" add -A; git -C "$P" -c user.name=t -c user.email=t@x commit -q -m link; s=$(git -C "$P" rev-parse HEAD)
+  approved_add "$K" "$(github_tree "$P" "$s")" "$s"
+  run job_check "$P" "$s" test
+  [ "$status" -eq 1 ]
+}
+
+@test "reusable workflows, .. paths, expressions in container and other runners are refused" {
+  for job in \
+    'test:
+    uses: ./tools/x.yml' \
+    'test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/../tools/a' \
+    'test:
+    runs-on: ubuntu-latest
+    container: ${{ fromJSON(vars.C) }}
+    steps:
+      - run: "true"' \
+    'test:
+    runs-on: ubuntu-22.04
+    steps:
+      - run: "true"'; do
+    s=$(wf "on: push
+jobs:
+  $job")
+    approved_add "$K" "$(github_tree "$P" "$s")" "$s"
+    run job_check "$P" "$s" test
+    [ "$status" -eq 1 ]
+  done
+}
+
+@test "a symlink leading out of the tree is refused" {
+  ln -s /etc/passwd "$P/data"
+  s=$(wf "$SAFE"); approved_add "$K" "$(github_tree "$P" "$s")" "$s"
+  run job_check "$P" "$s" test
+  [ "$status" -eq 1 ]; [[ "$output" == *symlink* ]]
+}
+
+@test "objects rewritten in the shared repository are refused" {
+  s=$(wf "$SAFE"); b=$(git -C "$P" rev-parse "$s:.github/workflows/ci.yml")
+  o="$P/.git/objects/${b:0:2}/${b:2}"; chmod u+w "$o"
+  python3 -c 'import sys, zlib; c = b"on: push\njobs: {}\n"; open(sys.argv[1], "wb").write(zlib.compress(b"blob %d\0" % len(c) + c))' "$o"
+  run github_tree "$P" "$s"
+  [ "$status" -ne 0 ]
+}
+
+@test "a planted origin/HEAD does not count as the reviewed default branch" {
+  R="$BATS_TEST_TMPDIR/remote"; git init -q "$R"; mkdir -p "$R/.github/workflows"; printf '%s\n' "$SAFE" > "$R/.github/workflows/ci.yml"
+  git -C "$R" add -A; git -C "$R" -c user.name=t -c user.email=t@x commit -q -m r
+  git -C "$P" remote add origin "$R"
+  e=$(wf 'on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo planted')
+  git -C "$P" update-ref refs/remotes/origin/HEAD "$e"
+  cd "$P"
+  run bash -c 'echo n | "$CRADLE_ROOT/bin/cradle" approve-workflows'
+  [ "$status" -eq 1 ]
+  run ! grep -q "^$(git -C "$P" rev-parse "$e:.github") " "$D/approved"
+  grep -q "^$(git -C "$R" rev-parse "HEAD:.github") " "$D/approved"
+}

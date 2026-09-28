@@ -18,7 +18,7 @@ st() { jq -r .status "$D/results/$1/status.json"; }
   req r1
   "$CRADLE_ROOT/bin/cradle-testd" "$K"
   [ "$(st r1)" = passed ]
-  grep -q "^act -W .github/workflows/ci.yml -j test -P ubuntu-latest=docker.io/catthehacker/ubuntu:act-latest --container-daemon-socket - --network none --container-options --memory=2g --rm --artifact-server-path $D/results/r1/artifacts$" "$STUB_LOG"
+  grep -q "^act -C $XDG_CACHE_HOME/cradle/runs/$K-r1 -W .github/workflows/ci.yml -j test -P ubuntu-latest=docker.io/catthehacker/ubuntu:act-latest --container-daemon-socket - --network none --container-options --memory=2g --rm --artifact-server-path $D/results/r1/artifacts --env-file /dev/null --secret-file /dev/null --var-file /dev/null --input-file /dev/null$" "$STUB_LOG"
   [ -f "$D/done/r1.json" ]; [ -z "$(ls -A "$D/processing")" ]
   grep -q "job ok" "$D/results/r1/act.log"
   [ -z "$(ls -A "$XDG_CACHE_HOME/cradle/runs" 2>/dev/null)" ]
@@ -52,4 +52,23 @@ st() { jq -r .status "$D/results/$1/status.json"; }
   [ "$(st old)" = aborted ]
   [ ! -e "$XDG_CACHE_HOME/cradle/runs/$K-old" ]
   [ -f "$D/done/old.json" ]
+}
+
+@test "act runs outside the worktree, so it reads no .actrc from the commit" {
+  stub_script act 'echo "cwd=$PWD" >> "$STUB_LOG"'
+  req r1
+  "$CRADLE_ROOT/bin/cradle-testd" "$K"
+  grep -q '^cwd=' "$STUB_LOG"
+  run ! grep -q "^cwd=$XDG_CACHE_HOME/cradle/runs" "$STUB_LOG"
+}
+
+@test "a request id that already has a result runs under a fresh id and keeps the old log" {
+  mkdir -p "$D/results/r1"; echo old > "$D/results/r1/act.log"
+  echo '{"status":"failed"}' > "$D/results/r1/status.json"
+  req r1
+  "$CRADLE_ROOT/bin/cradle-testd" "$K"
+  [ "$(cat "$D/results/r1/act.log")" = old ]
+  [ "$(st r1)" = failed ]
+  n=$(ls -d "$D"/results/r1-*); [ "$(jq -r .status "$n/status.json")" = passed ]
+  grep -q "job ok" "$n/act.log"
 }

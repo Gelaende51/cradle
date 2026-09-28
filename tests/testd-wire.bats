@@ -61,6 +61,16 @@ setup() {
   grep -qx 'DirectoryNotEmpty=%h/.local/state/cradle/testd/%i/req/new' "$CRADLE_ROOT/testd/cradle-testd@.path"
 }
 
-@test "the runner has no start rate limit, so a burst of requests cannot stop the path unit" {
-  grep -qx 'StartLimitIntervalSec=0' "$CRADLE_ROOT/testd/cradle-testd@.service"
+@test "the runner's start limit lets a burst of requests through but stops a crash loop" {
+  grep -qx 'StartLimitIntervalSec=60' "$CRADLE_ROOT/testd/cradle-testd@.service"
+  grep -qx 'StartLimitBurst=30' "$CRADLE_ROOT/testd/cradle-testd@.service"
+}
+
+@test "request ids are not predictable" {
+  "$CRADLE_ROOT/bin/cradle" init
+  git -c user.name=t -c user.email=t@x commit -q --allow-empty -m x
+  . "$CRADLE_ROOT/lib/common.sh"; . "$CRADLE_ROOT/lib/render.sh"; d=$(testd_dir "$(project_key "$P")")
+  CRADLE_REQUEST_WAIT=0 run "$CRADLE_ROOT/bin/cradle" test test
+  [ "$status" -eq 3 ]
+  [[ "$(ls "$d/req/new")" =~ ^[0-9]{8}-[0-9]{6}-[0-9a-f]{16}\.json$ ]]
 }
