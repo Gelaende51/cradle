@@ -10,12 +10,12 @@ secret_name_ok() { [[ $1 =~ ^[A-Z][A-Z0-9_]*$ && $1 != GH_TOKEN && $1 != GITHUB_
 
 secret_lookup() { secret-tool lookup service cradle-secret repo "$1" name "$2" 2>/dev/null; }
 
-# secret_names [DIR]: the names the project's cradle.json declares, one per line.
+# secret_names: the names the project's cradle.json declares, one per line.
 secret_names() {
   local n
   while IFS= read -r n; do
     secret_name_ok "$n" && printf '%s\n' "$n"
-  done < <(jq -r '.secrets[]?' "${1:-$PWD}/.devcontainer/cradle.json" 2>/dev/null)
+  done < <(jq -r '.secrets[]?' "$PWD/.devcontainer/cradle.json" 2>/dev/null)
   return 0
 }
 
