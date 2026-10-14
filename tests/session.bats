@@ -41,6 +41,28 @@ setup() {
   run ! grep -q "devcontainer exec" "$STUB_LOG"
 }
 
+@test "declared secrets reach the session by name, from the repo's keyring only" {
+  git remote add origin https://github.com/Gelaende51/cradle.git
+  jq '.secrets = ["CLOUDFLARE_API_TOKEN"]' .devcontainer/cradle.json > c.json && mv c.json .devcontainer/cradle.json
+  stub_script secret-tool '[[ "$*" == *cradle-secret* ]] && { printf cf_secret; exit 0; }; printf ghp_secret'
+  stub_script podman '[[ $1 == ps ]] && echo abc123; [[ $1 == exec ]] && echo "EXEC_CF=${CLOUDFLARE_API_TOKEN-unset}" >> "$STUB_LOG"; exit 0'
+  CLOUDFLARE_API_TOKEN=host_value run cradle claude
+  [ "$status" -eq 0 ]
+  grep -q "^podman exec -i -e GH_TOKEN -e CLOUDFLARE_API_TOKEN -u dev -w /home/dev/src/my-proj abc123 claude$" "$STUB_LOG"
+  grep -q "EXEC_CF=cf_secret" "$STUB_LOG"
+  run ! grep -q "^podman .*cf_secret" "$STUB_LOG"
+}
+
+@test "a declared secret without a stored value is not taken from the host" {
+  git remote add origin https://github.com/Gelaende51/cradle.git
+  jq '.secrets = ["CLOUDFLARE_API_TOKEN"]' .devcontainer/cradle.json > c.json && mv c.json .devcontainer/cradle.json
+  stub secret-tool 1
+  stub_script podman '[[ $1 == ps ]] && echo abc123; [[ $1 == exec ]] && echo "EXEC_CF=${CLOUDFLARE_API_TOKEN-unset}" >> "$STUB_LOG"; exit 0'
+  CLOUDFLARE_API_TOKEN=host_value run cradle claude
+  [ "$status" -eq 0 ]
+  grep -q "EXEC_CF=unset" "$STUB_LOG"
+}
+
 @test "a host GH_TOKEN never reaches the container" {
   GH_TOKEN=host_tok GITHUB_TOKEN=host_tok2 run cradle up
   [ "$status" -eq 0 ]

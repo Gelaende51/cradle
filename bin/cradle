@@ -8,7 +8,7 @@ export CRADLE_ROOT
 
 usage() {
   msg "usage: cradle <command> [args]"
-  msg "commands: version help doctor setup image config init token up down claude shell push net test approve-workflows"
+  msg "commands: version help doctor setup image config init token secret up down claude shell push net test approve-workflows"
   msg "  test JOB [REF]   run a tier-2 job on the host"
 }
 
@@ -17,7 +17,7 @@ cmd=${1:-help}
 case $cmd in
   version) cradle_version ;;
   help|-h|--help) usage ;;
-  doctor|setup|image|config|init|token) group=$cmd ;;
+  doctor|setup|image|config|init|token|secret) group=$cmd ;;
   up|down|claude|shell|push) group=session ;;
   net) group=proxy ;;
   test) group=testd ;;

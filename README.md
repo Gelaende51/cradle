@@ -43,7 +43,7 @@ cradle claude
 
 - [Architecture](docs/architecture.md) — containers, networks, volumes and the test service
 - [Security model](docs/security.md) — what is protected, how, which test checks it, and what is not
-- [Attaching a project](docs/attaching.md) — `cradle.json`, tokens, approving workflows, tier-2 tests
+- [Attaching a project](docs/attaching.md) — `cradle.json`, tokens and secrets, approving workflows, tier-2 tests
 - [Troubleshooting](docs/troubleshooting.md) — `cradle doctor`, refused requests, the proxy log
 - [Takeaways](dev/takeaways.md) — quirks found in podman, act, the Dev Container CLI, squid and the punt tools
 

@@ -40,6 +40,7 @@ Each project gets a key `<slug>-<8 hex of the path's sha256>`. With it:
 | `cradle up` / `down` | starts or stops the proxy and the dev container |
 | `cradle claude [args]` / `shell` | `up`, then Claude Code or a shell in the container |
 | `cradle token set\|show-expiry [owner/repo]` | the per-repo token in the keyring |
+| `cradle secret set\|unset NAME [owner/repo]`, `cradle secret list` | per-repo secrets in the keyring, passed to sessions by the names `cradle.json` declares |
 | `cradle push [--yes]` | pushes with the host's gh credentials (for workflow changes) |
 | `cradle approve-workflows [--yes] [ref]` | shows the `.github` diff and approves it for tier-2 runs |
 | `cradle test <job> [ref]` | a tier-2 request from the host |

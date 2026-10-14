@@ -11,8 +11,12 @@ msgid "usage: cradle <command> [args]"
 msgstr "Aufruf: cradle <Befehl> [Argumente]"
 
 #: bin/cradle
-msgid "commands: version help doctor setup image config init token up down claude shell push net test approve-workflows"
-msgstr "Befehle: version help doctor setup image config init token up down claude shell push net test approve-workflows"
+msgid ""
+"commands: version help doctor setup image config init token secret up down "
+"claude shell push net test approve-workflows"
+msgstr ""
+"Befehle: version help doctor setup image config init token secret up down "
+"claude shell push net test approve-workflows"
 
 #: bin/cradle
 msgid "  test JOB [REF]   run a tier-2 job on the host"
@@ -47,8 +51,12 @@ msgid "subordinate id ranges configured"
 msgstr "Bereiche für untergeordnete IDs eingerichtet"
 
 #: lib/doctor.sh
-msgid "no subuid/subgid range for %s; run: sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 %s && podman system migrate"
-msgstr "kein subuid/subgid-Bereich für %s; ausführen: sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 %s && podman system migrate"
+msgid ""
+"no subuid/subgid range for %s; run: sudo usermod --add-subuids 100000-165535 "
+"--add-subgids 100000-165535 %s && podman system migrate"
+msgstr ""
+"kein subuid/subgid-Bereich für %s; ausführen: sudo usermod --add-subuids "
+"100000-165535 --add-subgids 100000-165535 %s && podman system migrate"
 
 #: lib/doctor.sh
 msgid "installed"
@@ -84,7 +92,8 @@ msgstr "Konfigurations-Volume entspricht dem Kit"
 
 #: lib/doctor.sh
 msgid "config volume is missing or stale; run: cradle config sync"
-msgstr "Konfigurations-Volume fehlt oder ist veraltet; ausführen: cradle config sync"
+msgstr ""
+"Konfigurations-Volume fehlt oder ist veraltet; ausführen: cradle config sync"
 
 #: lib/doctor.sh
 msgid "%s is running"
@@ -132,7 +141,9 @@ msgstr "Speichergrenzen werden durchgesetzt"
 
 #: lib/doctor.sh
 msgid "memory controller not delegated; container memory limits are ignored"
-msgstr "Speicher-Controller nicht delegiert; Speichergrenzen der Container werden ignoriert"
+msgstr ""
+"Speicher-Controller nicht delegiert; Speichergrenzen der Container werden "
+"ignoriert"
 
 #: lib/doctor.sh
 msgid "%s GB free"
@@ -187,12 +198,19 @@ msgid "allowedDomains in cradle.json must be a list of domains"
 msgstr "allowedDomains in cradle.json muss eine Liste von Domains sein"
 
 #: lib/proxy.sh
-msgid "allowedDomains: %s is not a domain (write example.com, or .example.com for its subdomains too)"
-msgstr "allowedDomains: %s ist keine Domain (example.com schreiben, oder .example.com, um auch Subdomains einzuschließen)"
+msgid ""
+"allowedDomains: %s is not a domain (write example.com, or .example.com for "
+"its subdomains too)"
+msgstr ""
+"allowedDomains: %s ist keine Domain (example.com schreiben, "
+"oder .example.com, um auch Subdomains einzuschließen)"
 
 #: lib/proxy.sh
-msgid "allowedDomains: %s names a local host; the proxy only reaches the internet"
-msgstr "allowedDomains: %s bezeichnet einen lokalen Host; der Proxy erreicht nur das Internet"
+msgid ""
+"allowedDomains: %s names a local host; the proxy only reaches the internet"
+msgstr ""
+"allowedDomains: %s bezeichnet einen lokalen Host; der Proxy erreicht nur das "
+"Internet"
 
 #: lib/proxy.sh
 msgid "the egress proxy %s did not start; its log ends with:\\n%s"
@@ -211,16 +229,71 @@ msgid "usage: cradle net log"
 msgstr "Aufruf: cradle net log"
 
 #: lib/render.sh
-msgid "feature %s is not on cradle's allowlist (FEATURES_JSON in lib/render.sh)"
-msgstr "Feature %s steht nicht auf der Allowlist von cradle (FEATURES_JSON in lib/render.sh)"
+msgid ""
+"feature %s is not on cradle's allowlist (FEATURES_JSON in lib/render.sh)"
+msgstr ""
+"Feature %s steht nicht auf der Allowlist von cradle (FEATURES_JSON in lib/"
+"render.sh)"
 
 #: lib/render.sh
 msgid "no .devcontainer/cradle.json in %s; run: cradle init"
 msgstr "keine .devcontainer/cradle.json in %s; ausführen: cradle init"
 
 #: lib/render.sh
-msgid "%s was edited by hand; move the change into cradle.json, then delete devcontainer.json"
-msgstr "%s wurde von Hand bearbeitet; die Änderung in cradle.json übernehmen, dann devcontainer.json löschen"
+msgid ""
+"%s was edited by hand; move the change into cradle.json, then delete "
+"devcontainer.json"
+msgstr ""
+"%s wurde von Hand bearbeitet; die Änderung in cradle.json übernehmen, dann "
+"devcontainer.json löschen"
+
+#: lib/secret.sh
+msgid "value of"
+msgstr "Wert von"
+
+#: lib/secret.sh
+msgid "empty value"
+msgstr "leerer Wert"
+
+#: lib/secret.sh
+msgid "stored %s for %s"
+msgstr "%s für %s gespeichert"
+
+#: lib/secret.sh
+msgid ""
+"%s is not in \"secrets\" in .devcontainer/cradle.json; sessions get it once "
+"it is"
+msgstr ""
+"%s steht nicht unter \"secrets\" in .devcontainer/cradle.json; Sitzungen "
+"bekommen es erst, wenn es dort steht"
+
+#: lib/secret.sh
+msgid "%s: stored"
+msgstr "%s: gespeichert"
+
+#: lib/secret.sh
+msgid "%s: missing; run: cradle secret set %s"
+msgstr "%s: fehlt; ausführen: cradle secret set %s"
+
+#: lib/secret.sh
+msgid "no secrets declared in .devcontainer/cradle.json"
+msgstr "keine Geheimnisse in .devcontainer/cradle.json angegeben"
+
+#: lib/secret.sh lib/token.sh
+msgid "no GitHub origin remote here; pass owner/repo"
+msgstr "hier kein GitHub-Remote origin; owner/repo angeben"
+
+#: lib/secret.sh
+msgid "not a usable variable name: %s"
+msgstr "kein verwendbarer Variablenname: %s"
+
+#: lib/secret.sh
+msgid "removed %s for %s"
+msgstr "%s für %s entfernt"
+
+#: lib/secret.sh
+msgid "usage: cradle secret set|unset NAME [owner/repo] | list"
+msgstr "Aufruf: cradle secret set|unset NAME [owner/repo] | list"
 
 #: lib/session.sh
 msgid "the configuration changed; recreating the dev container"
@@ -264,7 +337,8 @@ msgstr "kein Commit %s"
 
 #: lib/testd.sh
 msgid "commit %s has no .github directory (or its objects are damaged)"
-msgstr "Commit %s hat kein .github-Verzeichnis (oder seine Objekte sind beschädigt)"
+msgstr ""
+"Commit %s hat kein .github-Verzeichnis (oder seine Objekte sind beschädigt)"
 
 #: lib/testd.sh
 msgid ".github at %s is already approved"
@@ -313,10 +387,6 @@ msgstr "Token für %s hat kein Ablaufdatum"
 #: lib/token.sh
 msgid "token for %s expires %s"
 msgstr "Token für %s läuft ab am %s"
-
-#: lib/token.sh
-msgid "no GitHub origin remote here; pass owner/repo"
-msgstr "hier kein GitHub-Remote origin; owner/repo angeben"
 
 #: lib/token.sh
 msgid "usage: cradle token set|show-expiry [owner/repo]"

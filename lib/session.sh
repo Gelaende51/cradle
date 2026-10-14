@@ -4,6 +4,8 @@
 . "$CRADLE_ROOT/lib/render.sh"
 # shellcheck source=lib/token.sh
 . "$CRADLE_ROOT/lib/token.sh"
+# shellcheck source=lib/secret.sh
+. "$CRADLE_ROOT/lib/secret.sh"
 # shellcheck source=lib/config.sh
 . "$CRADLE_ROOT/lib/config.sh"
 # shellcheck source=lib/proxy.sh
@@ -15,12 +17,17 @@ _dc() {
     devcontainer "$1" --docker-path podman --workspace-folder "$PWD" "${@:2}"
 }
 
-# Export GH_TOKEN for the devcontainer CLI (remoteEnv reads it); silent without one.
-# Only the repo's own keyring token goes in, never one the host shell happens to have.
+# Export GH_TOKEN for the devcontainer CLI (remoteEnv reads it), and the secrets
+# cradle.json declares for the sessions; silent without them. Only the repo's own
+# keyring values go in, never ones the host shell happens to have.
 _session_token() {
-  local r t
+  local r t n
   unset GH_TOKEN GITHUB_TOKEN
+  while IFS= read -r n; do unset "$n"; done < <(secret_names)
   r=$(repo_slug "$PWD") || return 0
+  while IFS= read -r n; do
+    t=$(secret_lookup "$r" "$n") && [[ -n $t ]] && export "$n=$t"
+  done < <(secret_names)
   t=$(token_lookup "$r") || return 0
   [[ -n $t ]] && export GH_TOKEN=$t
   return 0
@@ -59,13 +66,15 @@ cmd_down() {
 }
 
 # _exec CMD...: run CMD as dev in the workspace. podman exec, not devcontainer exec:
-# the CLI would put the token on podman's command line (-e GH_TOKEN=value).
+# the CLI would put the token on podman's command line (-e GH_TOKEN=value). -e NAME
+# without a value passes the variable from this environment, for each secret too.
 _exec() {
-  local id tty=()
+  local id tty=() env=(-e GH_TOKEN) n
   id=$(podman ps -q --filter "label=devcontainer.local_folder=$PWD" | head -n1)
   [[ -n $id ]] || die "no running dev container for %s" "$PWD"
   [[ -t 0 && -t 1 ]] && tty=(-t)
-  podman exec -i "${tty[@]}" -e GH_TOKEN -u dev \
+  while IFS= read -r n; do env+=(-e "$n"); done < <(secret_names)
+  podman exec -i "${tty[@]}" "${env[@]}" -u dev \
     -w "$(tail -n +2 .devcontainer/devcontainer.json | jq -r .workspaceFolder)" "$id" "$@"
 }
 

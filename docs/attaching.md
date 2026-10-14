@@ -12,6 +12,7 @@ Run in the project's git root. It writes `.devcontainer/cradle.json`, adds a blo
 | `features` | extra Dev Container features, only from cradle's allowlist (`FEATURES_JSON` in `lib/render.sh`) |
 | `maskPaths` | paths hidden inside the container (default `.personal`) |
 | `memory` | the container's memory limit (default `3g`) |
+| `secrets` | names of environment variables the sessions get from the keyring, e.g. `["CLOUDFLARE_API_TOKEN"]` (see *Secrets*) |
 | `allowedDomains` | domains the proxy allows in addition to the kit's list; `.example.com` includes subdomains |
 | `testJobs` | `[{"workflow": "ci.yml", "job": "test", "network": false}]` — jobs the container may request |
 | `testTimeout` | minutes per tier-2 run (default 30) |
@@ -21,6 +22,10 @@ Run in the project's git root. It writes `.devcontainer/cradle.json`, adds a blo
 ## Tokens
 
 `cradle token set owner/repo` stores a fine-grained GitHub token in the keyring (secret-tool). Give it the repository's contents, pull requests and issues permissions, **not** *workflows*. `cradle token show-expiry` tells how long it is valid; `cradle doctor` warns 7 days ahead. Workflow changes are pushed from the host with `cradle push`, which uses the host's own gh login.
+
+## Secrets
+
+Some projects need an API token of their own in the container, such as a model provider's. List its name under `secrets` in `cradle.json`, then store the value on the host: `cradle secret set CLOUDFLARE_API_TOKEN` (it asks for the value; from a pipe it reads stdin). `cradle claude` and `cradle shell` pass each declared secret into the session as an environment variable, by name (`podman exec -e NAME`): the value never appears on a command line, in `devcontainer.json` or in the volume. A secret that isn't stored stays unset; a variable of the same name in the host shell is never passed on. `cradle secret list` shows which declared secrets are stored; `cradle secret unset NAME` removes one. Values are per repository, like tokens. Give each the narrowest permission that does the job, because Claude in the container can read it.
 
 ## Tier-2 tests
 

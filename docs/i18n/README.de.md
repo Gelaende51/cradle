@@ -45,7 +45,7 @@ Die Meldungen der CLI erscheinen auf Deutsch, wenn die Locale deutsch ist (`LANG
 
 - [Architektur](../architecture.md) — Container, Netzwerke, Volumes und der Testdienst
 - [Sicherheitsmodell](../security.md) — was geschützt ist, wie, welcher Test es prüft und was nicht geschützt ist
-- [Projekt anbinden](../attaching.md) — `cradle.json`, Tokens, Freigabe von Workflows, Tier-2-Tests
+- [Projekt anbinden](../attaching.md) — `cradle.json`, Tokens und Geheimnisse, Freigabe von Workflows, Tier-2-Tests
 - [Fehlersuche](../troubleshooting.md) — `cradle doctor`, abgewiesene Anfragen, das Proxy-Log
 - [Erkenntnisse](../../dev/takeaways.md) — Eigenheiten von podman, act, der Dev-Container-CLI, squid und den punt-Werkzeugen
 
